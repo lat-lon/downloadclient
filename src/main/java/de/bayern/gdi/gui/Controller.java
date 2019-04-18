@@ -148,7 +148,7 @@ public class Controller {
             = "gui.process.not.compatible";
     private static final String GUI_FORMAT_NOT_SELECTED
             = "gui.no-format-selected";
-    private static final int MAP_WIDTH = 350;
+    private static final int MAP_WIDTH = 400;
     private static final int MAP_HEIGHT = 250;
     private static final int BGCOLOR = 244;
     private static final String EPSG4326 = "EPSG:4326";
@@ -2227,6 +2227,7 @@ public class Controller {
                     lablbasicy2);
             this.mapNodeWFS.getChildren().add(mapWFS);
             this.mapNodeWFS.setAutoSizeChildren(false);
+            mapWFS.repaint();
 
             mapAtom = new WMSMapSwing(url,
                     MAP_WIDTH,
@@ -2247,6 +2248,7 @@ public class Controller {
                 mapWFS.resizeSwingContent(newVal.doubleValue());
                 mapAtom.resizeSwingContent(newVal.doubleValue());
             });
+            mapAtom.repaint();
         } else {
             setStatusTextUI(I18n.format("status.wms-not-available"));
         }

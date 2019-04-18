@@ -250,39 +250,39 @@ public class WMSMapSwing extends Parent {
      * Constructor.
      * @param mapURL mapURL
      * @param width width
-     * @param heigth heigth
+     * @param height height
      * @param layer layer
      * @param mapURL The URL of the WMS Service
      * @throws MalformedURLException
      */
-    public WMSMapSwing(String mapURL, int width, int heigth, String layer)
+    public WMSMapSwing(String mapURL, int width, int height, String layer)
             throws
             MalformedURLException {
-        this(new URL(mapURL), width, heigth, layer);
+        this(new URL(mapURL), width, height, layer);
     }
 
     /**
      * Constructor.
      * @param mapURL mapURL
      * @param width width
-     * @param heigth heigth
+     * @param height height
      * @param layer layer
      */
-    public WMSMapSwing(URL mapURL, int width, int heigth, String layer) {
-        this(mapURL, width, heigth, layer, null, null);
+    public WMSMapSwing(URL mapURL, int width, int height, String layer) {
+        this(mapURL, width, height, layer, null, null);
     }
 
     /**
      * Constructor.
      * @param mapURL mapURL
      * @param width width
-     * @param heigth heigth
+     * @param height height
      * @param layer layer
      * @param source source
      */
-    public WMSMapSwing(URL mapURL, int width, int heigth, String layer,
+    public WMSMapSwing(URL mapURL, int width, int height, String layer,
                        String source) {
-        this(mapURL, width, heigth, layer, null, source);
+        this(mapURL, width, height, layer, null, source);
     }
 
     /**
@@ -314,12 +314,12 @@ public class WMSMapSwing extends Parent {
      * Constructor.
      * @param mapURL mapURL
      * @param width width
-     * @param heigth heigth
+     * @param height height
      * @param layer layer
      * @param source source
      * @param displayCRS crs of display
      */
-    public WMSMapSwing(URL mapURL, int width, int heigth, String layer,
+    public WMSMapSwing(URL mapURL, int width, int height, String layer,
                        CoordinateReferenceSystem displayCRS, String source) {
         initGeotoolsLocale();
         try {
@@ -332,7 +332,7 @@ public class WMSMapSwing extends Parent {
             this.sb = new StyleBuilder();
             this.sf = CommonFactoryFinder.getStyleFactory(null);
             this.ff = CommonFactoryFinder.getFilterFactory2(null);
-            this.mapHeight = heigth;
+            this.mapHeight = height;
             this.mapWidth = width;
             this.vBox = new VBox();
             this.wms = new WebMapServer(mapURL);
@@ -366,6 +366,9 @@ public class WMSMapSwing extends Parent {
             this.mapContent.setTitle(this.title);
             this.mapNode = new SwingNode();
             this.mapNode.setManaged(false);
+            this.mapNode.setVisible(true);
+            this.mapNode.requestFocus();
+            this.mapNode.resize(width, height);
             this.add(this.mapNode);
             this.getChildren().add(vBox);
             displayMap(baseLayer);
