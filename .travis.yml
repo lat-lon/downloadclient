@@ -1,6 +1,5 @@
 #https://docs.travis-ci.com/user/reference/overview/
 language: java
-sudo: false
 dist: trusty
 before_script:
 - "export DISPLAY=:99.0"
