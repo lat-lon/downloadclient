@@ -36,6 +36,9 @@ public class HeadlessIT {
         new HeadlessIT().testExecutionOfCLI();
     }
 
+    /**
+     * Simple test to verify that CLI is executable.
+     */
     @Test
     public void testExecutionOfCLI() {
         System.setProperty("logfilename", "logdlc-TEST.txt");

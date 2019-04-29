@@ -308,7 +308,7 @@ public class ServiceSettings {
             }
         }
         if (servicesMap.isEmpty()) {
-            throw new IOException(nodeName + " seeems to be empty - Config "
+            throw new IOException(nodeName + " seems to be empty - Config "
                     + "broken");
         }
         return servicesMap;
