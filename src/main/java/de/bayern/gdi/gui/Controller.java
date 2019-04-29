@@ -41,7 +41,6 @@ import de.bayern.gdi.services.WFSMetaExtractor;
 import de.bayern.gdi.utils.Config;
 import de.bayern.gdi.utils.DownloadConfig;
 import de.bayern.gdi.utils.I18n;
-import de.bayern.gdi.utils.Info;
 import de.bayern.gdi.utils.Misc;
 import de.bayern.gdi.utils.ServiceChecker;
 import de.bayern.gdi.utils.ServiceSettings;
@@ -317,14 +316,7 @@ public class Controller {
      */
     @FXML
     protected void initialize() {
-        log.trace("System Properties:");
-        System.getProperties().keySet().stream().map(
-            k -> (String)k).sorted().forEach(k -> {
-            log.trace(String.format("\t%s=%s", k,
-                System.getProperty(k)));
-        });
-        logToAppLog(I18n.format("dlc.start", Info.getVersion()));
-        logToAppLog(I18n.format("dlc.config", Config.getInstance()));
+
         logHistoryParent.expandedProperty().addListener(new ChangeListener() {
             @Override
             public void changed(ObservableValue o, Object oldVal,
