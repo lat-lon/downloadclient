@@ -163,7 +163,6 @@ public class Controller {
     //Application log
     private static final Logger APP_LOG
             = LoggerFactory.getLogger("Application_Log");
-    private static boolean appLogInit = false;
 
     // DataBean
     private DataBean dataBean;
@@ -426,12 +425,15 @@ public class Controller {
 
     /**
      * Opens up a file dialog to choose a config file to load.
-     * @throws Exception Exception
+     *
      * @return The chosen file
      */
-    protected File openConfigFileOpenDialog() throws Exception {
+    protected File openConfigFileOpenDialog() {
         FileChooser fileChooser = new FileChooser();
-        File initialDir = new File(System.getProperty(USER_DIR));
+        File initialDir = new File(
+            Config.getInstance().getServices().getBaseDirectory().isEmpty()
+                ? System.getProperty(USER_DIR)
+                : Config.getInstance().getServices().getBaseDirectory());
         fileChooser.setInitialDirectory(initialDir);
         fileChooser.setTitle(I18n.getMsg("menu.load_config"));
         fileChooser.getExtensionFilters().addAll(
@@ -1661,7 +1663,12 @@ public class Controller {
 
             if (downloadConfig == null) {
                 downloadDir = dirChooser.showDialog(getPrimaryStage());
-                initDir = new File(System.getProperty(USER_DIR));
+                String basedir = Config.getInstance().getServices()
+                    .getBaseDirectory();
+                initDir = new File(
+                    basedir.isEmpty()
+                    ? System.getProperty(USER_DIR)
+                    : basedir);
                 File uniqueName = Misc.uniqueFile(downloadDir, "config", "xml",
                         null);
                 fileChooser.setInitialFileName(uniqueName.getName());
@@ -1680,7 +1687,6 @@ public class Controller {
                 fileChooser.setInitialFileName(downloadConfig.getFile()
                         .getName());
             }
-
             fileChooser.setInitialDirectory(initDir);
             FileChooser.ExtensionFilter xmlFilter =
                     new FileChooser.ExtensionFilter("xml files (*.xml)",
