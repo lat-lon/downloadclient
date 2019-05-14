@@ -18,6 +18,26 @@
 
 package de.bayern.gdi.gui;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
+import javafx.scene.text.Text;
 import org.locationtech.jts.geom.Geometry;
 import de.bayern.gdi.model.DownloadStep;
 import de.bayern.gdi.model.MIMEType;
@@ -75,23 +95,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TitledPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -126,7 +130,6 @@ import org.slf4j.Logger;
 import static de.bayern.gdi.gui.FeatureModel.FilterType.BBOX;
 import static de.bayern.gdi.gui.FeatureModel.FilterType.FILTER;
 import static de.bayern.gdi.services.ServiceType.WFS_TWO;
-
 
 /**
  * @author Jochen Saalfeld (jochen@intevation.de)
@@ -303,6 +306,24 @@ public class Controller {
     private VBox sqlWFSArea;
     @FXML
     private HBox basicWFSFirstRows;
+    @FXML
+    private Menu menuFile;
+    @FXML
+    private MenuItem menuLoadConfig;
+    @FXML
+    private MenuItem menuQuit;
+    @FXML
+    private Text searchHeadlineText;
+    @FXML
+    private Label labelAtomVariation;
+    @FXML
+    private VBox containerChain;
+    @FXML
+    private Tab tabMap;
+    @FXML
+    private Tab tabFilter;
+    @FXML
+    private TabPane tabPane;
 
     /**
      * Creates the Controller.
