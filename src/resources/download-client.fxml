@@ -298,12 +298,13 @@
                                           </Tab>
                                           <Tab text="OLMap">
                                              <content>
-                                                <VBox prefHeight="200.0" prefWidth="100.0">
+                                                <VBox prefHeight="300.0" prefWidth="400.0">
                                                    <children>
-                                                      <HBox prefHeight="41.0" prefWidth="588.0" />
-                                                      <Pane prefHeight="200.0" prefWidth="200.0">
-                                                        <MapView fx:id="mapView"/>
-                                                      </Pane>
+                                                      <HBox prefHeight="300.0" prefWidth="400.0">
+                                                          <Pane prefHeight="300.0" prefWidth="400.0">
+                                                              <MapView fx:id="mapView"/>
+                                                          </Pane>
+                                                      </HBox>
                                                    </children>
                                                 </VBox>
                                              </content>

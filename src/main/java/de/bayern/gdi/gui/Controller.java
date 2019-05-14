@@ -18,6 +18,11 @@
 
 package de.bayern.gdi.gui;
 
+import com.sothawo.mapjfx.Coordinate;
+import com.sothawo.mapjfx.MapType;
+import com.sothawo.mapjfx.MapView;
+import com.sothawo.mapjfx.Projection;
+import com.sothawo.mapjfx.WMSParam;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -325,6 +330,13 @@ public class Controller {
     @FXML
     private TabPane tabPane;
 
+    /** The MapView containing the map. */
+    @FXML
+    private MapView mapView;
+
+    /** Default zoom value. */
+    private static final int ZOOM_DEFAULT = 14;
+
     /**
      * Creates the Controller.
      */
@@ -360,6 +372,22 @@ public class Controller {
                 }
             }
         });
+        initializeMapView();
+    }
+
+    protected void initializeMapView() {
+        log.debug("starting MapView initialization");
+        ServiceSettings serviceSetting = Config.getInstance().getServices();
+        mapView.initialize(Projection.WGS_84, true);
+        mapView.setZoom(ZOOM_DEFAULT);
+        mapView.setAnimationDuration(0);
+        mapView.setMapType(MapType.OSM);
+        mapView.setWMSParam(new WMSParam()
+            .setUrl(serviceSetting.getWMSUrl())
+            .addParam("layers", serviceSetting.getWMSLayer()));
+        mapView.setCenter(new Coordinate(48.136923, 11.591207));
+        mapView.toFront();
+        log.debug("initialization of " + mapView.toString() + " finished");
     }
 
     /**
