@@ -298,15 +298,11 @@
                                           </Tab>
                                           <Tab text="OLMap">
                                              <content>
-                                                <VBox prefHeight="300.0" prefWidth="400.0">
-                                                   <children>
-                                                      <HBox prefHeight="300.0" prefWidth="400.0">
-                                                          <Pane prefHeight="300.0" prefWidth="400.0">
-                                                              <MapView fx:id="mapView"/>
-                                                          </Pane>
-                                                      </HBox>
-                                                   </children>
-                                                </VBox>
+                                                 <BorderPane>
+                                                     <center>
+                                                         <MapView fx:id="mapView" BorderPane.alignment="CENTER"/>
+                                                     </center>
+                                                 </BorderPane>
                                              </content>
                                           </Tab>
                                       </tabs>
