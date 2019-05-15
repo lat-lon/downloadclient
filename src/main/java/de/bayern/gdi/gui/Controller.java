@@ -23,6 +23,7 @@ import com.sothawo.mapjfx.MapType;
 import com.sothawo.mapjfx.MapView;
 import com.sothawo.mapjfx.Projection;
 import com.sothawo.mapjfx.WMSParam;
+import de.bayern.gdi.gui.mapview.MapViewController;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -334,8 +335,7 @@ public class Controller {
     @FXML
     private MapView mapView;
 
-    /** Default zoom value. */
-    private static final int ZOOM_DEFAULT = 14;
+    private MapViewController mapViewController;
 
     /**
      * Creates the Controller.
@@ -372,23 +372,11 @@ public class Controller {
                 }
             }
         });
-        initializeMapView();
+        this.mapViewController = new MapViewController(mapView);
+        mapViewController.initializeMapView();
     }
 
-    protected void initializeMapView() {
-        log.debug("starting MapView initialization");
-        ServiceSettings serviceSetting = Config.getInstance().getServices();
-        mapView.initialize(Projection.WGS_84, true);
-        mapView.setZoom(ZOOM_DEFAULT);
-        mapView.setAnimationDuration(0);
-        mapView.setMapType(MapType.OSM);
-        mapView.setWMSParam(new WMSParam()
-            .setUrl(serviceSetting.getWMSUrl())
-            .addParam("layers", serviceSetting.getWMSLayer()));
-        mapView.setCenter(new Coordinate(48.136923, 11.591207));
-        mapView.toFront();
-        log.debug("initialization of " + mapView.toString() + " finished");
-    }
+
 
     /**
      * Logs a message to the application log.
