@@ -18,11 +18,7 @@
 
 package de.bayern.gdi.gui;
 
-import com.sothawo.mapjfx.Coordinate;
-import com.sothawo.mapjfx.MapType;
 import com.sothawo.mapjfx.MapView;
-import com.sothawo.mapjfx.Projection;
-import com.sothawo.mapjfx.WMSParam;
 import de.bayern.gdi.gui.mapview.MapViewController;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;

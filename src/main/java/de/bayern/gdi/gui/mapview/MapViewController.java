@@ -3,7 +3,6 @@ package de.bayern.gdi.gui.mapview;
 import com.sothawo.mapjfx.Coordinate;
 import com.sothawo.mapjfx.MapType;
 import com.sothawo.mapjfx.MapView;
-import com.sothawo.mapjfx.Projection;
 import com.sothawo.mapjfx.WMSParam;
 import de.bayern.gdi.utils.Config;
 import de.bayern.gdi.utils.ServiceSettings;
@@ -32,13 +31,13 @@ public class MapViewController {
     public void initializeMapView() {
         log.debug("starting MapView initialization");
         ServiceSettings serviceSetting = Config.getInstance().getServices();
-        mapView.initialize(Projection.WGS_84, true);
+        mapView.initialize();//Projection.WGS_84, true);
         mapView.setZoom(ZOOM_DEFAULT);
         mapView.setAnimationDuration(0);
-        mapView.setMapType(MapType.OSM);
         mapView.setWMSParam(new WMSParam()
             .setUrl(serviceSetting.getWMSUrl())
             .addParam("layers", serviceSetting.getWMSLayer()));
+        mapView.setMapType(MapType.WMS);
         mapView.setCenter(new Coordinate(48.136923, 11.591207));
         mapView.toFront();
         log.debug("initialization of " + mapView.toString() + " finished");
