@@ -17,7 +17,7 @@
  */
 
 
-package de.bayern.gdi.gui;
+package de.bayern.gdi.gui.map;
 
 import javafx.event.Event;
 import javafx.event.EventTarget;

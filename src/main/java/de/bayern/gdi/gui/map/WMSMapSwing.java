@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package de.bayern.gdi.gui;
+package de.bayern.gdi.gui.map;
 
 
 import com.sothawo.mapjfx.Coordinate;
@@ -85,7 +85,7 @@ import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;

@@ -18,7 +18,8 @@
 
 package de.bayern.gdi.gui;
 
-import com.sothawo.mapjfx.MapView;
+import de.bayern.gdi.gui.map.PolygonClickedEvent;
+import de.bayern.gdi.gui.map.WMSMapSwing;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
