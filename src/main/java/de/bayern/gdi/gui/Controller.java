@@ -155,8 +155,6 @@ public class Controller {
             = "gui.process.not.compatible";
     private static final String GUI_FORMAT_NOT_SELECTED
             = "gui.no-format-selected";
-    private static final int MAP_WIDTH = 400;
-    private static final int MAP_HEIGHT = 250;
     private static final int BGCOLOR = 244;
     private static final String EPSG4326 = "EPSG:4326";
     private static final String INITIAL_CRS_DISPLAY = EPSG4326;
@@ -2241,16 +2239,12 @@ public class Controller {
                 /*&& ServiceChecker.isReachable(
                 WMSMapSwing.getCapabiltiesURL(url))
                 */) {
-            mapWFS = new WMSMapSwing(url,
-                    MAP_WIDTH,
-                    MAP_HEIGHT,
-                    serviceSetting.getWMSLayer(),
-                    serviceSetting.getWMSSource());
-            mapWFS.setCoordinateDisplay(basicX1,
-                    basicY1,
+            mapWFS = new WMSMapSwing(serviceSetting,
+                    basicX1,
                     basicX2,
-                    basicY2);
-            mapWFS.setCoordinateLabel(lablbasicx1,
+                    basicY1,
+                    basicY2,
+                    lablbasicx1,
                     lablbasicx2,
                     lablbasicy1,
                     lablbasicy2);
@@ -2258,17 +2252,15 @@ public class Controller {
             this.mapNodeWFS.setAutoSizeChildren(false);
             mapWFS.repaint();
 
-            mapAtom = new WMSMapSwing(url,
-                    MAP_WIDTH,
-                    MAP_HEIGHT,
-                    serviceSetting.getWMSLayer(),
-                    serviceSetting.getWMSSource());
+            mapAtom = new WMSMapSwing(serviceSetting);
             mapAtom.addEventHandler(PolygonClickedEvent.ANY,
                     new SelectedAtomPolygon());
+            /* TODO: check if required for ATOM
             mapAtom.setCoordinateDisplay(atomX1,
                     atomY1,
                     atomX2,
                     atomY2);
+                    */
             this.mapNodeAtom.getChildren().add(mapAtom);
             this.mapNodeAtom.setAutoSizeChildren(false);
 
