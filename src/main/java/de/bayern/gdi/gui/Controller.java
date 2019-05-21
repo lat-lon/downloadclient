@@ -18,7 +18,9 @@
 
 package de.bayern.gdi.gui;
 
+import de.bayern.gdi.gui.map.FeaturePolygon;
 import de.bayern.gdi.gui.map.PolygonClickedEvent;
+import de.bayern.gdi.gui.map.PolygonInfos;
 import de.bayern.gdi.gui.map.WMSMapSwing;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -1879,7 +1881,7 @@ public class Controller {
                             dataBean.getAtomService().getItems();
                     ObservableList<ItemModel> opts =
                             FXCollections.observableArrayList();
-                    List<WMSMapSwing.FeaturePolygon> polygonList
+                    List<FeaturePolygon> polygonList
                         = new ArrayList<>();
                     //Polygons are always epsg:4326
                     // (http://www.georss.org/gml.html)
@@ -1890,8 +1892,8 @@ public class Controller {
                         Geometry all = null;
                         for (Atom.Item i : items) {
                             opts.add(new AtomItemModel(i));
-                            WMSMapSwing.FeaturePolygon polygon =
-                                    new WMSMapSwing.FeaturePolygon(
+                            FeaturePolygon polygon =
+                                    new FeaturePolygon(
                                             i.getPolygon(),
                                             i.getTitle(),
                                             i.getID(),
@@ -2450,7 +2452,7 @@ public class Controller {
             if (mapAtom != null && event instanceof PolygonClickedEvent) {
 
                 PolygonClickedEvent pce = (PolygonClickedEvent) event;
-                WMSMapSwing.PolygonInfos polygonInfos =
+                PolygonInfos polygonInfos =
                         pce.getPolygonInfos();
                 String polygonName = polygonInfos.getName();
                 String polygonID = polygonInfos.getID();

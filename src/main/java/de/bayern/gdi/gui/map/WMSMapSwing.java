@@ -71,7 +71,6 @@ import org.geotools.swing.dialog.TextReporterListener;
 import org.geotools.swing.locale.LocaleUtils;
 import org.geotools.swing.tool.InfoToolHelper;
 import org.geotools.swing.tool.InfoToolResult;
-import org.locationtech.jts.geom.Polygon;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
@@ -170,41 +169,6 @@ public class WMSMapSwing extends Parent {
     private JTextReporter.Connection textReporterConnection;
     private CoordinateLine currentBbox;
 
-    /**
-     * Represents all Infos needed for drawing a Polyon.
-     **/
-    public static class FeaturePolygon {
-        /**
-         * the polygon.
-         **/
-        private Polygon polygon;
-        /**
-         * name of the polygon.
-         **/
-        private String name;
-        /**
-         * id of the polygon.
-         **/
-        private String id;
-
-        /**
-         * crs of the polygon.
-         */
-        private CoordinateReferenceSystem crs;
-
-        /**
-         * Constructor.
-         **/
-        public FeaturePolygon(Polygon polygon,
-                              String name,
-                              String id,
-                              CoordinateReferenceSystem crs) {
-            this.polygon = polygon;
-            this.name = name;
-            this.id = id;
-            this.crs = crs;
-        }
-    }
 
     /**
      * Initializes geotools localisation system with our default I18n locale.
@@ -813,43 +777,6 @@ public class WMSMapSwing extends Parent {
     }
 
     /**
-     * Information about the Polygon.
-     */
-    public static class PolygonInfos {
-        private String name;
-        private String id;
-
-        /**
-         * Constructor.
-         *
-         * @param name the name
-         * @param id   the id
-         */
-        public PolygonInfos(String name, String id) {
-            this.name = name;
-            this.id = id;
-        }
-
-        /**
-         * returns the name.
-         *
-         * @return the name
-         */
-        public String getName() {
-            return this.name;
-        }
-
-        /**
-         * returns the ID.
-         *
-         * @return the ID
-         */
-        public String getID() {
-            return this.id;
-        }
-    }
-
-    /**
      * hightlight the selected Polygon.
      *
      * @param polygonID the selected Polygon
@@ -1129,11 +1056,11 @@ public class WMSMapSwing extends Parent {
                     new SimpleFeatureBuilder(polygonFeatureType);
                 try {
                     MathTransform transform = CRS.findMathTransform(
-                        fp.crs, this.mapCRS);
-                    featureBuilder.add(JTS.transform(fp.polygon,
+                        fp.getCrs(), this.mapCRS);
+                    featureBuilder.add(JTS.transform(fp.getPolygon(),
                         transform));
-                    featureBuilder.add(fp.name);
-                    featureBuilder.add(fp.id);
+                    featureBuilder.add(fp.getName());
+                    featureBuilder.add(fp.getId());
                     SimpleFeature feature = featureBuilder.buildFeature(null);
                     polygonFeatureCollection.add(feature);
                 } catch (FactoryException | TransformException e) {
