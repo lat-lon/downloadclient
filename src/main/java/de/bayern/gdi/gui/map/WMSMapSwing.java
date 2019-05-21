@@ -45,6 +45,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.geotools.data.DataUtilities;
+import org.geotools.data.FeatureSource;
 import org.geotools.data.ows.CRSEnvelope;
 import org.geotools.data.ows.Layer;
 import org.geotools.data.wms.WebMapServer;
@@ -75,6 +76,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -101,10 +103,6 @@ public class WMSMapSwing extends Parent {
     private static final int MAP_WIDTH = 400;
     private static final int MAP_HEIGHT = 250;
 
-    /**
-     * Default zoom value.
-     */
-    private static final int ZOOM_DEFAULT = 14;
     private WebMapServer wms;
 
     private MapView mapView;
@@ -126,12 +124,6 @@ public class WMSMapSwing extends Parent {
     private static final String TOOLBAR_RESET_BUTTON_NAME
         = "ToolbarResetButton";
 
-    private static final double INITIAL_EXTEND_X1 = 850028;
-    private static final double INITIAL_EXTEND_Y1 = 6560409;
-    private static final double INITIAL_EXTEND_X2 = 1681693;
-    private static final double INITIAL_EXTEND_Y2 = 5977713;
-    private static final String INITIAL_CRS = "EPSG:4326";
-
     private static final int MAP_NODE_MARGIN = 40;
     private static final int SOURCE_LABEL_HEIGHT = 70;
 
@@ -145,8 +137,12 @@ public class WMSMapSwing extends Parent {
     private String geometryAttributeName;
     private String source;
 
-    private static final Coordinate CENTER_BAY = new Coordinate(48.136923, 11.591207);
-    private static final Extent EXTENT_BAY = Extent.forCoordinates(new Coordinate(50.654523743525, 7.63593144329548), new Coordinate(47.2178956772476, 15.1069052509681));
+    private static final double BAY_MAX_LAT = 50.654523743525;
+    private static final double BAY_MIN_LAT = 47.2178956772476;
+    private static final double BAY_MIN_LON = 7.63593144329548;
+    private static final double BAY_MAX_LON = 15.1069052509681;
+    private static final String INITIAL_CRS = "EPSG:4326";
+
     private ToggleButton infoButton;
     private ToggleButton bboxButton;
 
@@ -291,10 +287,19 @@ public class WMSMapSwing extends Parent {
      * @param labelY1        lableY1
      * @param labelY2        lableY2
      */
-    public WMSMapSwing(ServiceSettings serviceSetting, TextField textX1, TextField textX2, TextField textY1, TextField textY2, Label labelX1, Label labelX2, Label labelY1, Label labelY2) {
+    public WMSMapSwing(ServiceSettings serviceSetting,
+                       TextField textX1,
+                       TextField textX2,
+                       TextField textY1,
+                       TextField textY2,
+                       Label labelX1,
+                       Label labelX2,
+                       Label labelY1,
+                       Label labelY2) {
         initGeotoolsLocale();
         init(serviceSetting);
-        initBboxCoordinates(textX1, textX2, textY1, textY2, labelX1, labelX2, labelY1, labelY2);
+        initBboxCoordinates(textX1, textX2, textY1, textY2,
+            labelX1, labelX2, labelY1, labelY2);
     }
 
     private void init(ServiceSettings serviceSetting) {
@@ -313,8 +318,7 @@ public class WMSMapSwing extends Parent {
             this.mapNode = new SwingNode();
             VBox vBox = new VBox();
             this.mapView = createMapView();
-            ToolBar toolbar = createToolbar(this.mapView);
-            vBox.getChildren().add(toolbar);
+            vBox.getChildren().add(createToolbar());
             vBox.getChildren().add(this.mapView);
             this.mapView.resize(MAP_WIDTH, MAP_HEIGHT);
             vBox.resize(MAP_WIDTH, MAP_HEIGHT);
@@ -326,7 +330,14 @@ public class WMSMapSwing extends Parent {
         }
     }
 
-    private void initBboxCoordinates(TextField textX1, TextField textX2, TextField textY1, TextField textY2, Label labelX1, Label labelX2, Label labelY1, Label labelY2) {
+    private void initBboxCoordinates(TextField textX1,
+                                     TextField textX2,
+                                     TextField textY1,
+                                     TextField textY2,
+                                     Label labelX1,
+                                     Label labelX2,
+                                     Label labelY1,
+                                     Label labelY2) {
         bboxCoordinates = new BboxCoordinates();
         try {
             bboxCoordinates.setDisplayCRS(INITIAL_CRS);
@@ -375,7 +386,9 @@ public class WMSMapSwing extends Parent {
 
     private MapView createMapView() {
         MapView mapView = new MapView();
-        mapView.initializedProperty().addListener((observable, oldValue, newValue) -> {
+        mapView.initializedProperty().addListener((observable,
+                                                   oldValue,
+                                                   newValue) -> {
             if (newValue) {
                 afterMapIsInitialized();
             }
@@ -416,7 +429,11 @@ public class WMSMapSwing extends Parent {
             Coordinate upperRight = new Coordinate(maxY, maxX);
             Coordinate lowerRight = new Coordinate(minY, maxX);
 
-            currentBbox = new CoordinateLine(lowerLeft, upperLeft, upperRight, lowerRight).setWidth(2).setColor(javafx.scene.paint.Color.DARKRED).setClosed(true);
+            currentBbox = new CoordinateLine(lowerLeft, upperLeft,
+                upperRight, lowerRight)
+                .setWidth(2)
+                .setColor(javafx.scene.paint.Color.DARKRED)
+                .setClosed(true);
             mapView.addCoordinateLine(currentBbox);
             currentBbox.setVisible(true);
 
@@ -428,7 +445,8 @@ public class WMSMapSwing extends Parent {
 
     private void handleInfoClickedEvent(MapViewEvent event) {
         Coordinate clickedCoord = event.getCoordinate();
-        DirectPosition2D pos = new DirectPosition2D(clickedCoord.getLongitude(), clickedCoord.getLatitude());
+        DirectPosition2D pos = new DirectPosition2D(
+            clickedCoord.getLongitude(), clickedCoord.getLatitude());
         this.createReporter();
         this.report(pos);
         int nlayers = mapContent.layers().size();
@@ -448,17 +466,19 @@ public class WMSMapSwing extends Parent {
             } while (!layer.isSelected());
 
             String layerName = layer.getTitle();
+            FeatureSource<?, ?> featureSource = layer.getFeatureSource();
             if (layerName == null || layerName.length() == 0) {
-                layerName = layer.getFeatureSource().getName().getLocalPart();
+                layerName = featureSource.getName().getLocalPart();
             }
 
             if (layerName == null || layerName.length() == 0) {
-                layerName = layer.getFeatureSource().getSchema().getName().getLocalPart();
+                layerName = featureSource.getSchema().getName().getLocalPart();
             }
 
             InfoToolHelper helper = InfoToolHelperLookup.getHelper(layer);
             if (helper == null) {
-                LOG.warn("InfoTool cannot query {0}", layer.getClass().getName());
+                LOG.warn("InfoTool cannot query {0}",
+                    layer.getClass().getName());
                 return;
             }
             helper.setMapContent(mapContent);
@@ -479,12 +499,14 @@ public class WMSMapSwing extends Parent {
     }
 
     private void report(DirectPosition2D pos) {
-        this.textReporterConnection.append(String.format("Pos x=%.4f y=%.4f\n", pos.x, pos.y));
+        this.textReporterConnection.append(
+            String.format("Pos x=%.4f y=%.4f\n", pos.x, pos.y));
     }
 
     private void createReporter() {
         if (this.textReporterConnection == null) {
-            this.textReporterConnection = JTextReporter.showDialog("Feature info", null, 6, 20, 40);
+            this.textReporterConnection = JTextReporter.showDialog(
+                "Feature info", null, 6, 20, 40);
             this.textReporterConnection.addListener(new TextReporterListener() {
                 @Override
                 public void onReporterClosed() {
@@ -502,19 +524,17 @@ public class WMSMapSwing extends Parent {
     private void afterMapIsInitialized() {
         LOG.debug("Initialize map");
         ServiceSettings serviceSetting = Config.getInstance().getServices();
-        mapView.setZoom(ZOOM_DEFAULT);
-        mapView.setAnimationDuration(0);
         mapView.setWMSParam(new WMSParam()
             .setUrl(serviceSetting.getWMSUrl())
             .addParam("layers", serviceSetting.getWMSLayer()));
         // TODO: should be WMS to show the WMS map
         // but currently drawing of the bbox does not work with MapType.WMS
         mapView.setMapType(MapType.OSM);
-        mapView.setCenter(CENTER_BAY);
+        setInitialExtend();
         LOG.debug("initialization of " + mapView.toString() + " finished");
     }
 
-    private ToolBar createToolbar(MapView mapView) {
+    private ToolBar createToolbar() {
         ToggleGroup bboxOrInfoGroup = new ToggleGroup();
         this.bboxButton = new ToggleButton(TOOLBAR_POINTER_BUTTON_NAME);
         bboxButton.setToggleGroup(bboxOrInfoGroup);
@@ -522,7 +542,7 @@ public class WMSMapSwing extends Parent {
         infoButton.setToggleGroup(bboxOrInfoGroup);
 
         Button resizeButton = new Button(TOOLBAR_RESET_BUTTON_NAME);
-        resizeButton.setOnAction(event -> mapView.setExtent(EXTENT_BAY));
+        resizeButton.setOnAction(event -> setInitialExtend());
 
         ToolBar toolBar = new ToolBar(bboxButton, infoButton, resizeButton);
         toolBar.setOrientation(Orientation.HORIZONTAL);
@@ -918,34 +938,42 @@ public class WMSMapSwing extends Parent {
      * @param envelope the extend
      */
     public void setExtend(ReferencedEnvelope envelope) {
-        /*
         try {
             envelope = envelope.transform(this.mapContent.getViewport()
-                    .getCoordinateReferenceSystem(), true);
+                .getCoordinateReferenceSystem(), true);
             double xLength = envelope.getSpan(0);
             xLength = xLength * TEN_PERCENT;
             double yLength = envelope.getSpan(1);
             yLength = yLength * TEN_PERCENT;
             envelope.expandBy(xLength, yLength);
-            //bboxAction.resetCoordinates();
-            //mapPane.deleteGraphics();
-            //mapPane.setDisplayArea(envelope);
+
+            DirectPosition lowerCorner = envelope.getLowerCorner();
+            DirectPosition upperCorner = envelope.getUpperCorner();
+            Coordinate lower = new Coordinate(lowerCorner.getOrdinate(0),
+                lowerCorner.getOrdinate(1));
+            Coordinate upper = new Coordinate(upperCorner.getOrdinate(0),
+                upperCorner.getOrdinate(1));
+            mapView.setExtent(Extent.forCoordinates(lower, upper));
+
+            if (currentBbox != null) {
+                mapView.removeCoordinateLine(currentBbox);
+            }
         } catch (FactoryException | TransformException e) {
             LOG.error(e.getMessage(), e);
         }
-        */
     }
 
-    private void setExtend(Double x1, Double x2, Double y1, Double y2, String
-        crs) {
-        CoordinateReferenceSystem coordinateReferenceSystem = null;
+    private void setInitialExtend() {
         try {
-            coordinateReferenceSystem = CRS.decode(crs);
+            CoordinateReferenceSystem coordinateReferenceSystem =
+                CRS.decode(INITIAL_CRS);
             ReferencedEnvelope initExtend =
-                new ReferencedEnvelope(x1,
-                    x2,
-                    y1,
-                    y2, coordinateReferenceSystem);
+                new ReferencedEnvelope(
+                    BAY_MIN_LAT,
+                    BAY_MAX_LAT,
+                    BAY_MIN_LON,
+                    BAY_MAX_LON,
+                    coordinateReferenceSystem);
             setExtend(initExtend);
         } catch (FactoryException e) {
             LOG.error(e.getMessage(), e);
@@ -969,12 +997,10 @@ public class WMSMapSwing extends Parent {
      */
     public void reset() {
         this.bboxCoordinates.clearCoordinateDisplay();
-        /*
         this.mapContent.layers().stream()
             .filter(layer -> layer.getTitle() != null)
             .filter(layer -> layer.getTitle().equals(POLYGON_LAYER_TITLE))
             .forEach(layer -> mapContent.removeLayer(layer));
-            */
         this.polygonFeatureCollection = null;
         this.geomDesc = null;
         this.geometryAttributeName = null;
