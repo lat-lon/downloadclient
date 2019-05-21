@@ -19,7 +19,6 @@
 package de.bayern.gdi.gui;
 
 import com.sothawo.mapjfx.MapView;
-import de.bayern.gdi.gui.mapview.MapViewController;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -177,7 +176,6 @@ public class Controller {
     private UIFactory factory;
     private boolean catalogReachable;
     private WMSMapSwing mapAtom;
-    private WMSMapSwing mapWFS;
     private DownloadConfig downloadConfig;
 
     @FXML
@@ -327,11 +325,7 @@ public class Controller {
     @FXML
     private TabPane tabPane;
 
-    /** The MapView containing the map. */
-    @FXML
-    private MapView mapView;
-
-    private MapViewController mapViewController;
+    private WMSMapSwing mapWFS;
 
     /**
      * Creates the Controller.
@@ -368,8 +362,6 @@ public class Controller {
                 }
             }
         });
-        this.mapViewController = new MapViewController(mapView);
-        mapViewController.initializeMapView();
     }
 
 
@@ -2242,9 +2234,10 @@ public class Controller {
             log.error(e.getMessage(), e);
         }
         if (url != null
-                && ServiceChecker.isReachable(
+            //TODO
+                /*&& ServiceChecker.isReachable(
                 WMSMapSwing.getCapabiltiesURL(url))
-                ) {
+                */) {
             mapWFS = new WMSMapSwing(url,
                     MAP_WIDTH,
                     MAP_HEIGHT,
