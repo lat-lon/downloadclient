@@ -86,7 +86,6 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.Color;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -165,65 +164,6 @@ public class WMSMapSwing extends Parent {
     }
 
     /**
-     * adds a node to this map.
-     *
-     * @param n the node
-    public void add(Node n) {
-    this.vBox.getChildren().remove(n);
-    this.vBox.getChildren().add(n);
-    }
-     */
-
-    /**
-     * Constructor.
-     */
-    public WMSMapSwing() {
-        initGeotoolsLocale();
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param mapURL mapURL
-     * @param width  width
-     * @param height height
-     * @param layer  layer
-     * @param mapURL The URL of the WMS Service
-     * @throws MalformedURLException
-    public WMSMapSwing(String mapURL, int width, int height, String layer)
-    throws
-    MalformedURLException {
-    this(new URL(mapURL), width, height, layer);
-    }
-     */
-
-    /**
-     * Constructor.
-     *
-     * @param mapURL mapURL
-     * @param width  width
-     * @param height height
-     * @param layer  layer
-    public WMSMapSwing(URL mapURL, int width, int height, String layer) {
-    this(mapURL, width, height, layer, null, null);
-    }
-     */
-
-    /**
-     * Constructor.
-     *
-     * @param mapURL mapURL
-     * @param width  width
-     * @param height height
-     * @param layer  layer
-     * @param source source
-    public WMSMapSwing(URL mapURL, int width, int height, String layer,
-    String source) {
-    this(mapURL, width, height, layer, null, source);
-    }
-
-     */
-    /**
      * gets the getCapabilities URL.
      *
      * @param mapURL the URL of the Map
@@ -250,18 +190,6 @@ public class WMSMapSwing extends Parent {
     return url;
     }
     */
-
-    /**
-     * Constructor.
-     *
-     * @param mapURL     mapURL
-     * @param width      width
-     * @param height     height
-     * @param layer      layer
-     * @param source     source
-     * @param displayCRS crs of display
-     */
-
 
     /**
      * Constructor.
