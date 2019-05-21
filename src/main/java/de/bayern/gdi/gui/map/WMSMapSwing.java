@@ -87,8 +87,8 @@ import org.slf4j.LoggerFactory;
 import java.awt.Color;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Jochen Saalfeld (jochen@intevation.de)
@@ -116,7 +116,7 @@ public class WMSMapSwing extends Parent {
     private CoordinateReferenceSystem mapCRS;
 
     private static final double TEN_PERCENT = 0.1D;
-    private static final String POLYGON_LAYER_TITLE = "PolygonLayer";
+    public static final String POLYGON_LAYER_TITLE = "PolygonLayer";
     private static final String TOOLBAR_INFO_BUTTON_NAME = "ToolbarInfoButton";
     private static final String TOOLBAR_POINTER_BUTTON_NAME
         = "ToolbarPointerButton";
@@ -152,6 +152,7 @@ public class WMSMapSwing extends Parent {
     private MapContent mapContent;
     private JTextReporter.Connection textReporterConnection;
     private BboxCoordinates bboxCoordinates;
+    private PolygonsOnMapViewHandler polygonsOnMapViewHandler;
 
 
     /**
@@ -231,6 +232,7 @@ public class WMSMapSwing extends Parent {
 
     private void init(ServiceSettings serviceSetting) {
         try {
+            this.mapView = createMapView();
             String layer = serviceSetting.getWMSLayer();
             String source = serviceSetting.getWMSSource();
             initWmsAndLayer(layer, serviceSetting);
@@ -244,7 +246,6 @@ public class WMSMapSwing extends Parent {
             this.mapHeight = MAP_HEIGHT;
             this.mapNode = new SwingNode();
             VBox vBox = new VBox();
-            this.mapView = createMapView();
             vBox.getChildren().add(createToolbar());
             vBox.getChildren().add(this.mapView);
             this.mapView.resize(MAP_WIDTH, MAP_HEIGHT);
@@ -305,6 +306,9 @@ public class WMSMapSwing extends Parent {
                 }
             }
             this.mapContent = new MapContent();
+            this.polygonsOnMapViewHandler = new PolygonsOnMapViewHandler(this.mapView);
+            this.mapContent.addMapLayerListListener(
+                polygonsOnMapViewHandler);
             displayMap(baseLayer);
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
@@ -335,94 +339,142 @@ public class WMSMapSwing extends Parent {
     }
 
     private void handleBboxClickEvent(MapView mapView, MapViewEvent event) {
-        if (currentBbox != null) {
-            bboxFirst = null;
-            mapView.removeCoordinateLine(currentBbox);
-            currentBbox = null;
-        }
-        if (bboxFirst == null) {
-            bboxFirst = event.getCoordinate();
+        if (mapContent.layers().size() == 1) {
+            if (currentBbox != null) {
+                bboxFirst = null;
+                mapView.removeCoordinateLine(currentBbox);
+                currentBbox = null;
+            }
+            if (bboxFirst == null) {
+                bboxFirst = event.getCoordinate();
+            } else {
+                Coordinate bboxSecond = event.getCoordinate();
+                double x1 = bboxFirst.getLongitude();
+                double x2 = bboxSecond.getLongitude();
+                double y1 = bboxFirst.getLatitude();
+                double y2 = bboxSecond.getLatitude();
+                double minX = Math.min(x1, x2);
+                double maxX = Math.max(x1, x2);
+                double minY = Math.min(y1, y2);
+                double maxY = Math.max(y1, y2);
+
+                Coordinate lowerLeft = new Coordinate(minY, minX);
+                Coordinate upperLeft = new Coordinate(maxY, minX);
+                Coordinate upperRight = new Coordinate(maxY, maxX);
+                Coordinate lowerRight = new Coordinate(minY, maxX);
+
+                currentBbox = new CoordinateLine(lowerLeft, upperLeft,
+                    upperRight, lowerRight)
+                    .setWidth(2)
+                    .setColor(javafx.scene.paint.Color.DARKRED)
+                    .setClosed(true)
+                    .setVisible(true);
+                mapView.addCoordinateLine(currentBbox);
+
+                bboxCoordinates.setDisplayCoordinates(minX, maxX, minY, maxY, mapCRS);
+            }
         } else {
-            Coordinate bboxSecond = event.getCoordinate();
-            double x1 = bboxFirst.getLongitude();
-            double x2 = bboxSecond.getLongitude();
-            double y1 = bboxFirst.getLatitude();
-            double y2 = bboxSecond.getLatitude();
-            double minX = Math.min(x1, x2);
-            double maxX = Math.max(x1, x2);
-            double minY = Math.min(y1, y2);
-            double maxY = Math.max(y1, y2);
+            Coordinate clickedCoord = event.getCoordinate();
+            DirectPosition2D pos = new DirectPosition2D(
+                clickedCoord.getLatitude(), clickedCoord.getLongitude());
+            for (org.geotools.map.Layer layer : mapContent.layers()) {
+                if (layer.isSelected()) {
+                    String layerName = detectLayerName(layer);
+                    InfoToolHelper helper = InfoToolHelperLookup.getHelper(layer);
+                    if (helper == null) {
+                        LOG.warn("InfoTool cannot query {0}",
+                            layer.getClass().getName());
+                        return;
+                    }
 
-            Coordinate lowerLeft = new Coordinate(minY, minX);
-            Coordinate upperLeft = new Coordinate(maxY, minX);
-            Coordinate upperRight = new Coordinate(maxY, maxX);
-            Coordinate lowerRight = new Coordinate(minY, maxX);
+                    helper.setMapContent(mapContent);
+                    helper.setLayer(layer);
 
-            currentBbox = new CoordinateLine(lowerLeft, upperLeft,
-                upperRight, lowerRight)
-                .setWidth(2)
-                .setColor(javafx.scene.paint.Color.DARKRED)
-                .setClosed(true)
-                .setVisible(true);
-            mapView.addCoordinateLine(currentBbox);
-
-            bboxCoordinates.setDisplayCoordinates(minX, maxX, minY, maxY, mapCRS);
+                    highlightClickedPolygon(pos, layerName, helper);
+                }
+            }
         }
     }
 
     private void handleInfoClickedEvent(MapViewEvent event) {
         Coordinate clickedCoord = event.getCoordinate();
         DirectPosition2D pos = new DirectPosition2D(
-            clickedCoord.getLongitude(), clickedCoord.getLatitude());
+            clickedCoord.getLatitude(), clickedCoord.getLongitude());
         this.createReporter();
         this.report(pos);
-        int nlayers = mapContent.layers().size();
-        int n = 0;
-        Iterator var6 = mapContent.layers().iterator();
 
-        while (true) {
-            org.geotools.map.Layer layer;
-            do {
-                if (!var6.hasNext()) {
-                    this.textReporterConnection.appendSeparatorLine(10, '-');
-                    this.textReporterConnection.appendNewline();
+        for (org.geotools.map.Layer layer : mapContent.layers()) {
+            if (layer.isSelected()) {
+                String layerName = detectLayerName(layer);
+                InfoToolHelper helper = InfoToolHelperLookup.getHelper(layer);
+                if (helper == null) {
+                    LOG.warn("InfoTool cannot query {0}",
+                        layer.getClass().getName());
                     return;
                 }
 
-                layer = (org.geotools.map.Layer) var6.next();
-            } while (!layer.isSelected());
+                helper.setMapContent(mapContent);
+                helper.setLayer(layer);
 
-            String layerName = layer.getTitle();
-            FeatureSource<?, ?> featureSource = layer.getFeatureSource();
-            if (layerName == null || layerName.length() == 0) {
-                layerName = featureSource.getName().getLocalPart();
-            }
-
-            if (layerName == null || layerName.length() == 0) {
-                layerName = featureSource.getSchema().getName().getLocalPart();
-            }
-
-            InfoToolHelper helper = InfoToolHelperLookup.getHelper(layer);
-            if (helper == null) {
-                LOG.warn("InfoTool cannot query {0}",
-                    layer.getClass().getName());
-                return;
-            }
-            helper.setMapContent(mapContent);
-            helper.setLayer(layer);
-
-            try {
-                InfoToolResult result = helper.getInfo(pos);
-                this.textReporterConnection.append(layerName + "\n");
-                this.textReporterConnection.append(result.toString(), 4);
-                ++n;
-                if (n < nlayers) {
-                    this.textReporterConnection.append("\n");
+                try {
+                    InfoToolResult result = helper.getInfo(pos);
+                    this.textReporterConnection.append(layerName + "\n");
+                    this.textReporterConnection.append(result.toString(), 4);
+                    this.textReporterConnection.appendSeparatorLine(10, '-');
+                    this.textReporterConnection.appendNewline();
+                } catch (Exception var11) {
+                    LOG.warn("Unable to query layer {}", layerName);
                 }
-            } catch (Exception var11) {
-                LOG.warn("Unable to query layer {}", layerName);
             }
         }
+    }
+
+    private void highlightClickedPolygon(DirectPosition2D pos,
+                                         String layerName,
+                                         InfoToolHelper helper) {
+        try {
+            if (layerName.equals(POLYGON_LAYER_TITLE)) {
+                InfoToolResult result =
+                    helper.getInfo(pos);
+                int numFeatures =
+                    result.getNumFeatures();
+                if (numFeatures == 1) {
+                    Map<String, Object> featureData
+                        = result.
+                        getFeatureData(0);
+                    String name = (String)
+                        featureData.get(
+                            "name");
+                    String id = (String)
+                        featureData.get("id");
+                    setNameAndId(name, id);
+                } else if (numFeatures > 1) {
+                    //Yup, this is dirty.
+                    setNameAndId("#@#", Integer
+                        .toString(numFeatures));
+                }
+            }
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
+
+    private void setNameAndId(String name, String id) {
+        PolygonInfos polyInf = new PolygonInfos(name, id);
+        Platform.runLater(
+            () -> fireEvent(new PolygonClickedEvent(polyInf)));
+    }
+
+    private String detectLayerName(org.geotools.map.Layer layer) {
+        String layerName = layer.getTitle();
+        FeatureSource<?, ?> featureSource = layer.getFeatureSource();
+        if (layerName == null || layerName.isEmpty()) {
+            layerName = featureSource.getName().getLocalPart();
+        }
+        if (layerName == null || layerName.isEmpty()) {
+            layerName = featureSource.getSchema().getName().getLocalPart();
+        }
+        return layerName;
     }
 
     private void report(DirectPosition2D pos) {
@@ -527,82 +579,14 @@ public class WMSMapSwing extends Parent {
         // createSwingContent(this.mapNode);
     }
 
-
-    /**
-     * sets name and id of the selected polygon.
-     *
-     * @param name name
-     * @param id   id
-     */
-    private void setNameAndId(String name, String id) {
-        PolygonInfos polyInf = new PolygonInfos(name, id);
-        Platform.runLater(
-            () -> fireEvent(new PolygonClickedEvent(polyInf)));
-    }
-
     /**
      * highlight the selected Polygon.
      *
      * @param polygonID the selected Polygon
      */
     public void highlightSelectedPolygon(String polygonID) {
-        /*
-        for (SimpleFeature simpleFeature : polygonFeatureCollection) {
-            String featureID = (String) simpleFeature.getAttribute("id");
-            if (featureID.equals(polygonID)) {
-                Style style =
-                    createSelectedStyle(simpleFeature.getIdentifier());
-                org.geotools.map.Layer layer = null;
-                for (org.geotools.map.Layer layers : mapPane.getMapContent()
-                        .layers()) {
-                    String t = layers.getTitle();
-                    if (t != null && t.equals(POLYGON_LAYER_TITLE)) {
-                        layer = layers;
-                    }
-                }
-                if (layer instanceof FeatureLayer) {
-                    ((FeatureLayer) layer).setStyle(style);
-                }
-            }
-        }
-        */
+        this.polygonsOnMapViewHandler.highlightSelectedPolygon(polygonID);
     }
-
-    /*
-    private Style createSelectedStyle(FeatureId ids) {
-        Rule selectedRule = createRule(SELECTED_COLOUR, SELECTED_COLOUR);
-        selectedRule.setFilter(ff.id(ids));
-
-        Rule otherRule = createRule(OUTLINE_COLOR, FILL_COLOR);
-        otherRule.setElseFilter(true);
-
-        FeatureTypeStyle fts = sf.createFeatureTypeStyle();
-        fts.rules().add(selectedRule);
-        fts.rules().add(otherRule);
-
-        Style style = sf.createStyle();
-        style.featureTypeStyles().add(fts);
-        return style;
-    }
-
-    private Rule createRule(Color outlineColor, Color fillColor) {
-        Symbolizer symbolizer = null;
-        Fill fill = null;
-        Stroke stroke = sf.createStroke(
-                ff.literal(outlineColor),
-                ff.literal(OUTLINE_WIDTH));
-
-        fill = sf.createFill(ff.literal(fillColor),
-                ff.literal(FILL_TRANSPARACY));
-        symbolizer = sf.createPolygonSymbolizer(stroke, fill,
-                geometryAttributeName);
-
-
-        Rule rule = sf.createRule();
-        rule.symbolizers().add(symbolizer);
-        return rule;
-    }
-*/
 
     /**
      * Resizes swing content and centers map.
@@ -793,7 +777,6 @@ public class WMSMapSwing extends Parent {
      */
     public void drawPolygons(List<FeaturePolygon> featurePolygons) {
         try {
-            SimpleFeatureType polygonFeatureType;
             String epsgCode = this
                 .mapCRS
                 .getIdentifiers()
@@ -801,7 +784,7 @@ public class WMSMapSwing extends Parent {
                 .toString();
             epsgCode = epsgCode.substring(epsgCode.lastIndexOf(':') + 1,
                 epsgCode.length());
-            polygonFeatureType = DataUtilities.createType(
+            SimpleFeatureType polygonFeatureType = DataUtilities.createType(
                 "Dataset",
                 "geometry:Geometry:srid="
                     + epsgCode
@@ -835,13 +818,7 @@ public class WMSMapSwing extends Parent {
             org.geotools.map.Layer polygonLayer = new FeatureLayer(
                 polygonFeatureCollection, createPolygonStyle());
             polygonLayer.setTitle(POLYGON_LAYER_TITLE);
-            List<org.geotools.map.Layer> layers = mapContent.layers();
-            for (org.geotools.map.Layer layer : layers) {
-                String t = layer.getTitle();
-                if (t != null && t.equals(POLYGON_LAYER_TITLE)) {
-                    mapContent.removeLayer(layer);
-                }
-            }
+            removePolygonLayer();
             mapContent.addLayer(polygonLayer);
         } catch (SchemaException e) {
             LOG.error(e.getMessage(), e);
@@ -924,12 +901,17 @@ public class WMSMapSwing extends Parent {
      */
     public void reset() {
         this.bboxCoordinates.clearCoordinateDisplay();
-        this.mapContent.layers().stream()
-            .filter(layer -> layer.getTitle() != null)
-            .filter(layer -> layer.getTitle().equals(POLYGON_LAYER_TITLE))
-            .forEach(layer -> mapContent.removeLayer(layer));
+        removePolygonLayer();
         this.polygonFeatureCollection = null;
         this.geomDesc = null;
         this.geometryAttributeName = null;
     }
+
+    private void removePolygonLayer() {
+        this.mapContent.layers().stream()
+            .filter(layer -> layer.getTitle() != null)
+            .filter(layer -> layer.getTitle().equals(POLYGON_LAYER_TITLE))
+            .forEach(layer -> mapContent.removeLayer(layer));
+    }
+
 }
