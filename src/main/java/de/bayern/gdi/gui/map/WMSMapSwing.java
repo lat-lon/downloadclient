@@ -146,12 +146,11 @@ public class WMSMapSwing extends Parent {
     private ToggleButton bboxButton;
 
     private Coordinate bboxFirst;
-    private Coordinate bboxSecond;
-    private CoordinateLine bbox;
+    private CoordinateLine currentBbox;
+
     private WMSLayer layer;
     private MapContent mapContent;
     private JTextReporter.Connection textReporterConnection;
-    private CoordinateLine currentBbox;
     private BboxCoordinates bboxCoordinates;
 
 
@@ -337,12 +336,14 @@ public class WMSMapSwing extends Parent {
 
     private void handleBboxClickEvent(MapView mapView, MapViewEvent event) {
         if (currentBbox != null) {
+            bboxFirst = null;
             mapView.removeCoordinateLine(currentBbox);
+            currentBbox = null;
         }
         if (bboxFirst == null) {
             bboxFirst = event.getCoordinate();
         } else {
-            bboxSecond = event.getCoordinate();
+            Coordinate bboxSecond = event.getCoordinate();
             double x1 = bboxFirst.getLongitude();
             double x2 = bboxSecond.getLongitude();
             double y1 = bboxFirst.getLatitude();
@@ -361,13 +362,11 @@ public class WMSMapSwing extends Parent {
                 upperRight, lowerRight)
                 .setWidth(2)
                 .setColor(javafx.scene.paint.Color.DARKRED)
-                .setClosed(true);
+                .setClosed(true)
+                .setVisible(true);
             mapView.addCoordinateLine(currentBbox);
-            currentBbox.setVisible(true);
 
             bboxCoordinates.setDisplayCoordinates(minX, maxX, minY, maxY, mapCRS);
-            bboxFirst = null;
-            bboxSecond = null;
         }
     }
 

@@ -201,15 +201,15 @@ public class BboxCoordinates {
      * Sets the coordinates to the display.
      *
      * @param x1     x1
-     * @param y1     x2
      * @param x2     y1
+     * @param y1     x2
      * @param y2     y2
      * @param mapCRS CRS of the map
      */
     public void setDisplayCoordinates(
         Double x1,
-        Double y1,
         Double x2,
+        Double y1,
         Double y2,
         CoordinateReferenceSystem mapCRS) {
         try {
