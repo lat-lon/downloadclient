@@ -124,8 +124,8 @@ public class PolygonsOnMapViewHandler implements MapLayerListListener {
      */
     public void highlightSelectedPolygon(String polygonId) {
         CoordinateLine coordinateLine = polygonFeatures.get(polygonId);
-        updateFill(coordinateLine, SELECTED_FILL);
         updateFill(highlightedCoordinateLine, FILL);
+        updateFill(coordinateLine, SELECTED_FILL);
         this.highlightedCoordinateLine = coordinateLine;
     }
 
