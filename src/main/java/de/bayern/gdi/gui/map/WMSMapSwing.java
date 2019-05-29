@@ -470,9 +470,7 @@ public class WMSMapSwing extends Parent {
         mapView.setWMSParam(new WMSParam()
             .setUrl(serviceSetting.getWMSUrl())
             .addParam("layers", serviceSetting.getWMSLayer()));
-        // TODO: should be WMS to show the WMS map
-        // but currently drawing of the bbox does not work with MapType.WMS
-        mapView.setMapType(MapType.OSM);
+        mapView.setMapType(MapType.WMS);
         setInitialExtend();
         LOG.debug("initialization of " + mapView.toString() + " finished");
     }
