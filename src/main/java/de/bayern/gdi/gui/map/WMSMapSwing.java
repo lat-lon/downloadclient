@@ -40,6 +40,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -91,7 +92,7 @@ public class WMSMapSwing extends Parent {
      * name of the polygon layer.
      */
     public static final String POLYGON_LAYER_TITLE = "PolygonLayer";
-
+    private static final int SOURCE_LABEL_HEIGHT = 70;
     private static final int MAP_WIDTH = 400;
     private static final int MAP_HEIGHT = 250;
     private static final double TEN_PERCENT = 0.1D;
@@ -182,6 +183,13 @@ public class WMSMapSwing extends Parent {
             this.mapView.resize(MAP_WIDTH, MAP_HEIGHT);
             vBox.resize(MAP_WIDTH, MAP_HEIGHT);
             this.getChildren().add(vBox);
+
+            String wmsSource = serviceSetting.getWMSSource();
+            if (wmsSource != null) {
+                Text sourceLabel = new Text(wmsSource);
+                //mapHeight += SOURCE_LABEL_HEIGHT;
+                vBox.getChildren().add(sourceLabel);
+            }
 
             //Projection.WGS_84, true);
             this.mapView.initialize();
