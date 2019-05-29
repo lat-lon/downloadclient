@@ -60,8 +60,6 @@ import org.geotools.map.MapContent;
 import org.geotools.map.WMSLayer;
 import org.geotools.referencing.CRS;
 import org.geotools.styling.StyleBuilder;
-import org.geotools.swing.dialog.JTextReporter;
-import org.geotools.swing.dialog.TextReporterListener;
 import org.geotools.swing.locale.LocaleUtils;
 import org.geotools.swing.tool.InfoToolHelper;
 import org.geotools.swing.tool.InfoToolResult;
@@ -119,9 +117,9 @@ public class WMSMapSwing extends Parent {
     private CoordinateLine currentBbox;
     private WMSLayer layer;
     private MapContent mapContent;
-    private JTextReporter.Connection textReporterConnection;
     private BboxCoordinates bboxCoordinates;
     private PolygonsOnMapViewHandler polygonsOnMapViewHandler;
+    private FeatureInfoReporter featureInfoReporter = new FeatureInfoReporter();
 
 
     /**
@@ -168,35 +166,7 @@ public class WMSMapSwing extends Parent {
     public WMSMapSwing(ServiceSettings serviceSetting) {
         initGeotoolsLocale();
         init(serviceSetting);
-        this.bboxCoordinates = new BboxCoordinates();
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param serviceSetting serviceSettings
-     * @param textX1         textX1
-     * @param textX2         textX2
-     * @param textY1         textY1
-     * @param textY2         textY2
-     * @param labelX1        lableX1
-     * @param labelX2        lableX2
-     * @param labelY1        lableY1
-     * @param labelY2        lableY2
-     */
-    public WMSMapSwing(ServiceSettings serviceSetting,
-                       TextField textX1,
-                       TextField textX2,
-                       TextField textY1,
-                       TextField textY2,
-                       Label labelX1,
-                       Label labelX2,
-                       Label labelY1,
-                       Label labelY2) {
-        initGeotoolsLocale();
-        init(serviceSetting);
-        initBboxCoordinates(textX1, textX2, textY1, textY2,
-            labelX1, labelX2, labelY1, labelY2);
+        initBboxCoordinates();
     }
 
     private void init(ServiceSettings serviceSetting) {
@@ -220,22 +190,46 @@ public class WMSMapSwing extends Parent {
         }
     }
 
-    private void initBboxCoordinates(TextField textX1,
-                                     TextField textX2,
-                                     TextField textY1,
-                                     TextField textY2,
-                                     Label labelX1,
-                                     Label labelX2,
-                                     Label labelY1,
-                                     Label labelY2) {
+    private void initBboxCoordinates() {
         bboxCoordinates = new BboxCoordinates();
         try {
             bboxCoordinates.setDisplayCRS(INITIAL_CRS);
         } catch (FactoryException e) {
             LOG.error(e.getMessage(), e);
         }
+    }
+
+    /**
+     * sets text fields for coordinates.
+     *
+     * @param textX1 x1
+     * @param textX2 y1
+     * @param textY1 x2
+     * @param textY2 y2
+     */
+    public void setCoordinateDisplay(
+        TextField textX1,
+        TextField textX2,
+        TextField textY1,
+        TextField textY2) {
         bboxCoordinates.setCoordinateDisplay(textX1, textX2, textY1, textY2);
-        bboxCoordinates.setCoordinateLabel(labelX1, labelX2, labelY1, labelY2);
+    }
+
+    /**
+     * Sets the Labels.
+     *
+     * @param labelx1 label x1
+     * @param labelx2 label x2
+     * @param labely1 label y1
+     * @param labely2 label y2
+     */
+    public void setCoordinateLabel(
+        Label labelx1,
+        Label labelx2,
+        Label labely1,
+        Label labely2
+    ) {
+        bboxCoordinates.setCoordinateLabel(labelx1, labelx2, labely1, labely2);
     }
 
     private void initWmsAndLayer(ServiceSettings serviceSetting) {
@@ -363,8 +357,8 @@ public class WMSMapSwing extends Parent {
         Coordinate clickedCoord = event.getCoordinate();
         DirectPosition2D pos = new DirectPosition2D(
             clickedCoord.getLatitude(), clickedCoord.getLongitude());
-        this.createReporter();
-        this.report(pos);
+        featureInfoReporter.createReporter();
+        featureInfoReporter.report(pos);
 
         for (org.geotools.map.Layer mapLayer : mapContent.layers()) {
             if (mapLayer.isSelected()) {
@@ -382,16 +376,14 @@ public class WMSMapSwing extends Parent {
 
                 try {
                     InfoToolResult result = helper.getInfo(pos);
-                    this.textReporterConnection.append(layerName + "\n");
-                    this.textReporterConnection.append(result.toString(), 4);
-                    this.textReporterConnection.appendSeparatorLine(10, '-');
-                    this.textReporterConnection.appendNewline();
+                    featureInfoReporter.report(layerName, result);
                 } catch (Exception var11) {
                     LOG.warn("Unable to query layer {}", layerName);
                 }
             }
         }
     }
+
 
     private void highlightClickedPolygon(DirectPosition2D pos,
                                          String layerName,
@@ -439,29 +431,6 @@ public class WMSMapSwing extends Parent {
             layerName = featureSource.getSchema().getName().getLocalPart();
         }
         return layerName;
-    }
-
-    private void report(DirectPosition2D pos) {
-        this.textReporterConnection.append(
-            String.format("Pos x=%.4f y=%.4f\n", pos.x, pos.y));
-    }
-
-    private void createReporter() {
-        if (this.textReporterConnection == null) {
-            this.textReporterConnection = JTextReporter.showDialog(
-                "Feature info", null, 6, 20, 40);
-            this.textReporterConnection.addListener(new TextReporterListener() {
-                @Override
-                public void onReporterClosed() {
-                    textReporterConnection = null;
-                }
-
-                @Override
-                public void onReporterUpdated() {
-
-                }
-            });
-        }
     }
 
     private void afterMapIsInitialized() {

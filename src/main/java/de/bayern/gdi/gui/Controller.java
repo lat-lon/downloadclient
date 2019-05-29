@@ -2239,15 +2239,17 @@ public class Controller {
                 /*&& ServiceChecker.isReachable(
                 WMSMapSwing.getCapabiltiesURL(url))
                 */) {
-            mapWFS = new WMSMapSwing(serviceSetting,
-                    basicX1,
-                    basicX2,
-                    basicY1,
-                    basicY2,
-                    lablbasicx1,
-                    lablbasicx2,
-                    lablbasicy1,
-                    lablbasicy2);
+            mapWFS = new WMSMapSwing(serviceSetting);
+            mapWFS.setCoordinateDisplay(
+                basicX1,
+                basicX2,
+                basicY1,
+                basicY2);
+            mapWFS.setCoordinateLabel(
+                lablbasicx1,
+                lablbasicx2,
+                lablbasicy1,
+                lablbasicy2);
             this.mapNodeWFS.getChildren().add(mapWFS);
             this.mapNodeWFS.setAutoSizeChildren(false);
             mapWFS.repaint();
