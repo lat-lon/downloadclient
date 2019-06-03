@@ -610,7 +610,7 @@ public class WMSMapSwing extends Parent {
                 epsgCode.length());
             SimpleFeatureType polygonFeatureType = DataUtilities.createType(
                 "Dataset",
-                "geometry:Geometry:srid="
+                "geometry:Polygon:srid="
                     + epsgCode
                     + ","
                     + "name:String,"
