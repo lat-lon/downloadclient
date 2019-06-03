@@ -99,6 +99,7 @@ public class PolygonsOnMapViewHandler implements MapLayerListListener {
                 mapView.removeCoordinateLine(cl);
             }
             polygonFeatures.clear();
+            highlightedCoordinateLine = null;
         }
     }
 
