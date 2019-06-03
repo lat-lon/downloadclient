@@ -31,17 +31,7 @@ import de.bayern.gdi.utils.HTTP;
 import de.bayern.gdi.utils.I18n;
 import de.bayern.gdi.utils.ServiceSettings;
 import javafx.application.Platform;
-import javafx.geometry.Orientation;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.ToolBar;
-import javafx.scene.control.Tooltip;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
+import javafx.event.EventTarget;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -95,30 +85,27 @@ public class WMSMapSwing {
      * name of the polygon layer.
      */
     public static final String POLYGON_LAYER_TITLE = "PolygonLayer";
-    private static final int MAP_WIDTH = 400;
-    private static final int MAP_HEIGHT = 250;
     private static final double TEN_PERCENT = 0.1D;
     private static final double BAY_MAX_LAT = 50.654523743525;
     private static final double BAY_MIN_LAT = 47.2178956772476;
     private static final double BAY_MIN_LON = 7.63593144329548;
     private static final double BAY_MAX_LON = 15.1069052509681;
     private static final String INITIAL_CRS = "EPSG:4326";
-    private final VBox mapNode;
+    private final EventTarget mapNode;
+    private final MapView mapView;
 
     private WebMapServer wms;
-    private MapView mapView;
     private StyleBuilder sb;
     private DefaultFeatureCollection polygonFeatureCollection;
     private CoordinateReferenceSystem mapCRS;
-    private ToggleButton infoButton;
-    private ToggleButton bboxButton;
     private Coordinate bboxFirst;
     private CoordinateLine currentBbox;
     private WMSLayer layer;
     private MapContent mapContent;
     private BboxCoordinates bboxCoordinates;
+    private final MapActionToolbar toolbar;
     private PolygonsOnMapViewHandler polygonsOnMapViewHandler;
-    private FeatureInfoReporter featureInfoReporter = new FeatureInfoReporter();
+    private final FeatureInfoReporter featureInfoReporter = new FeatureInfoReporter();
 
 
     /**
@@ -129,13 +116,6 @@ public class WMSMapSwing {
         LocaleUtils.setLocale(I18n.getLocale());
     }
 
-
-    /**
-     * gets the getCapabilities URL.
-     *
-     * @param mapURL the URL of the Map
-     * @return getCapabilties URL
-     */
     /*
     public static URL getCapabiltiesURL(URL mapURL) {
     URL url = mapURL;
@@ -157,78 +137,23 @@ public class WMSMapSwing {
     return url;
     }
     */
-    public WMSMapSwing(ServiceSettings serviceSetting, VBox mapNode) {
+    public WMSMapSwing(ServiceSettings serviceSetting, EventTarget mapNode, MapView mapView, BboxCoordinates bboxCoordinates, MapActionToolbar toolbar) {
         this.mapNode = mapNode;
-        initGeotoolsLocale();
-        init(serviceSetting, mapNode);
-        initBboxCoordinates();
-    }
-
-    private void init(ServiceSettings serviceSetting, VBox mapNodeWFS) {
+        this.mapView = mapView;
+        this.bboxCoordinates = bboxCoordinates;
+        this.toolbar = toolbar;
         try {
-            createMapView();
-            initWmsAndLayer(serviceSetting);
-            setMapCRS(CRS.decode(INITIAL_CRS));
-
+            this.mapCRS = CRS.decode(INITIAL_CRS);
             this.sb = new StyleBuilder();
-            mapNodeWFS.getChildren().add(0, createToolbar());
-            mapNodeWFS.getChildren().add(1, this.mapView);
-            this.mapView.setMinWidth(MAP_WIDTH);
-            this.mapView.setMinHeight(MAP_HEIGHT);
-
-            String wmsSource = serviceSetting.getWMSSource();
-            if (wmsSource != null) {
-                Text sourceLabel = new Text(wmsSource);
-                mapNodeWFS.getChildren().add(2, sourceLabel);
-            }
-
-            this.mapView.initialize();
+            initGeotoolsLocale();
+            initMapView();
+            initWmsAndLayer(serviceSetting);
+            mapView.initialize();
         } catch (FactoryException e) {
             LOG.error(e.getMessage(), e);
         }
     }
 
-    private void initBboxCoordinates() {
-        bboxCoordinates = new BboxCoordinates();
-        try {
-            bboxCoordinates.setDisplayCRS(INITIAL_CRS);
-        } catch (FactoryException e) {
-            LOG.error(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * sets text fields for coordinates.
-     *
-     * @param textX1 x1
-     * @param textX2 y1
-     * @param textY1 x2
-     * @param textY2 y2
-     */
-    public void setCoordinateDisplay(
-        TextField textX1,
-        TextField textX2,
-        TextField textY1,
-        TextField textY2) {
-        bboxCoordinates.setCoordinateDisplay(textX1, textX2, textY1, textY2);
-    }
-
-    /**
-     * Sets the Labels.
-     *
-     * @param labelx1 label x1
-     * @param labelx2 label x2
-     * @param labely1 label y1
-     * @param labely2 label y2
-     */
-    public void setCoordinateLabel(
-        Label labelx1,
-        Label labelx2,
-        Label labely1,
-        Label labely2
-    ) {
-        bboxCoordinates.setCoordinateLabel(labelx1, labelx2, labely1, labely2);
-    }
 
     private void initWmsAndLayer(ServiceSettings serviceSetting) {
         try {
@@ -271,8 +196,7 @@ public class WMSMapSwing {
         }
     }
 
-    private void createMapView() {
-        this.mapView = new MapView();
+    private void initMapView() {
         mapView.initializedProperty().addListener((observable,
                                                    oldValue,
                                                    newValue) -> {
@@ -283,70 +207,73 @@ public class WMSMapSwing {
 
         mapView.addEventHandler(MapViewEvent.MAP_CLICKED, event -> {
             event.consume();
-            if (bboxButton.isSelected()) {
+            if (toolbar.isBboxButtonSelected()) {
                 handleBboxClickEvent(event);
-            } else if (infoButton.isSelected()) {
+            } else if (toolbar.isSelectButtonSelected()) {
+                handleSelectClickEvent(event);
+            } else if (toolbar.isInfoButtonSelected()) {
                 handleInfoClickedEvent(event);
             }
         });
     }
 
     private void handleBboxClickEvent(MapViewEvent event) {
-        if (mapContent.layers().size() == 1) {
-            if (currentBbox != null) {
-                bboxFirst = null;
-                mapView.removeCoordinateLine(currentBbox);
-                currentBbox = null;
-            }
-            if (bboxFirst == null) {
-                bboxFirst = event.getCoordinate();
-            } else {
-                Coordinate bboxSecond = event.getCoordinate();
-                double x1 = bboxFirst.getLongitude();
-                double x2 = bboxSecond.getLongitude();
-                double y1 = bboxFirst.getLatitude();
-                double y2 = bboxSecond.getLatitude();
-                double minX = Math.min(x1, x2);
-                double maxX = Math.max(x1, x2);
-                double minY = Math.min(y1, y2);
-                double maxY = Math.max(y1, y2);
+        if (currentBbox != null) {
+            bboxFirst = null;
+            mapView.removeCoordinateLine(currentBbox);
+            currentBbox = null;
+        }
+        if (bboxFirst == null) {
+            bboxFirst = event.getCoordinate();
+        } else {
+            Coordinate bboxSecond = event.getCoordinate();
+            double x1 = bboxFirst.getLongitude();
+            double x2 = bboxSecond.getLongitude();
+            double y1 = bboxFirst.getLatitude();
+            double y2 = bboxSecond.getLatitude();
+            double minX = Math.min(x1, x2);
+            double maxX = Math.max(x1, x2);
+            double minY = Math.min(y1, y2);
+            double maxY = Math.max(y1, y2);
 
-                Coordinate lowerLeft = new Coordinate(minY, minX);
-                Coordinate upperLeft = new Coordinate(maxY, minX);
-                Coordinate upperRight = new Coordinate(maxY, maxX);
-                Coordinate lowerRight = new Coordinate(minY, maxX);
+            Coordinate lowerLeft = new Coordinate(minY, minX);
+            Coordinate upperLeft = new Coordinate(maxY, minX);
+            Coordinate upperRight = new Coordinate(maxY, maxX);
+            Coordinate lowerRight = new Coordinate(minY, maxX);
 
-                currentBbox = new CoordinateLine(lowerLeft, upperLeft,
-                    upperRight, lowerRight)
-                    .setWidth(2)
-                    .setColor(javafx.scene.paint.Color.DARKRED)
-                    .setClosed(true)
-                    .setVisible(true);
-                mapView.addCoordinateLine(currentBbox);
-
+            currentBbox = new CoordinateLine(lowerLeft, upperLeft,
+                upperRight, lowerRight)
+                .setWidth(2)
+                .setColor(javafx.scene.paint.Color.DARKRED)
+                .setClosed(true)
+                .setVisible(true);
+            mapView.addCoordinateLine(currentBbox);
+            if (bboxCoordinates != null) {
                 bboxCoordinates.setDisplayCoordinates(minX, maxX, minY, maxY,
                     mapCRS);
             }
-        } else {
-            Coordinate clickedCoord = event.getCoordinate();
-            DirectPosition2D pos = new DirectPosition2D(
-                clickedCoord.getLatitude(), clickedCoord.getLongitude());
-            for (org.geotools.map.Layer mapLayer : mapContent.layers()) {
-                if (mapLayer.isSelected()) {
-                    String layerName = detectLayerName(mapLayer);
-                    InfoToolHelper helper =
-                        InfoToolHelperLookup.getHelper(mapLayer);
-                    if (helper == null) {
-                        LOG.warn("InfoTool cannot query {0}",
-                            mapLayer.getClass().getName());
-                        return;
-                    }
+        }
+    }
 
-                    helper.setMapContent(mapContent);
-                    helper.setLayer(mapLayer);
-
-                    highlightClickedPolygon(pos, layerName, helper);
+    private void handleSelectClickEvent(MapViewEvent event) {
+        Coordinate clickedCoord = event.getCoordinate();
+        DirectPosition2D pos = new DirectPosition2D(
+            clickedCoord.getLatitude(), clickedCoord.getLongitude());
+        for (org.geotools.map.Layer mapLayer : mapContent.layers()) {
+            if (mapLayer.isSelected()) {
+                String layerName = detectLayerName(mapLayer);
+                InfoToolHelper helper =
+                    InfoToolHelperLookup.getHelper(mapLayer);
+                if (helper == null) {
+                    LOG.warn("InfoTool cannot query {0}",
+                        mapLayer.getClass().getName());
+                    return;
                 }
+
+                helper.setMapContent(mapContent);
+                helper.setLayer(mapLayer);
+
+                highlightClickedPolygon(pos, layerName, helper);
             }
         }
     }
@@ -442,35 +369,6 @@ public class WMSMapSwing {
         LOG.debug("initialization of " + mapView.toString() + " finished");
     }
 
-    private ToolBar createToolbar() {
-        ToggleGroup bboxOrInfoGroup = new ToggleGroup();
-        this.bboxButton = new ToggleButton();
-        ImageView bboxIcon = new ImageView(
-            "/org/geotools/swing/icons/pointer.png");
-        Tooltip bboxTooltip = new Tooltip(I18n.format("tooltip.pointer"));
-        this.bboxButton.setGraphic(bboxIcon);
-        this.bboxButton.setTooltip(bboxTooltip);
-        bboxButton.setToggleGroup(bboxOrInfoGroup);
-        this.infoButton = new ToggleButton();
-        ImageView infoIcon = new ImageView(
-            "/org/geotools/swing/icons/mActionIdentify.png");
-        Tooltip infoTooltip = new Tooltip(I18n.format("tooltip.info"));
-        infoButton.setGraphic(infoIcon);
-        infoButton.setTooltip(infoTooltip);
-        infoButton.setToggleGroup(bboxOrInfoGroup);
-
-        Button resizeButton = new Button();
-        ImageView resizeIcon = new ImageView(
-            "/org/geotools/swing/icons/mActionZoomFullExtent.png");
-        Tooltip resizeTooltip = new Tooltip(I18n.format("tooltip.resize"));
-        resizeButton.setGraphic(resizeIcon);
-        resizeButton.setTooltip(resizeTooltip);
-        resizeButton.setOnAction(event -> setInitialExtend());
-
-        ToolBar toolBar = new ToolBar(bboxButton, infoButton, resizeButton);
-        toolBar.setOrientation(Orientation.HORIZONTAL);
-        return toolBar;
-    }
 
     /**
      * return the Bounds of the Map.
@@ -487,7 +385,9 @@ public class WMSMapSwing {
      * @param crs crs
      */
     public void setDisplayCRS(CoordinateReferenceSystem crs) {
-        this.bboxCoordinates.setDisplayCRS(crs);
+        if (bboxCoordinates != null) {
+            this.bboxCoordinates.setDisplayCRS(crs);
+        }
     }
 
     /**
@@ -497,13 +397,10 @@ public class WMSMapSwing {
      * @throws FactoryException when the CRS can't be found
      */
     public void setDisplayCRS(String crs) throws FactoryException {
-        this.bboxCoordinates.setDisplayCRS(crs);
+        if (bboxCoordinates != null) {
+            this.bboxCoordinates.setDisplayCRS(crs);
+        }
     }
-
-    private void setMapCRS(CoordinateReferenceSystem crs) {
-        this.mapCRS = crs;
-    }
-
 
     private void displayMap(Layer wmsLayer) {
         CRSEnvelope targetEnv = null;
@@ -516,11 +413,10 @@ public class WMSMapSwing {
 
         this.layer = new WMSLayer(this.wms, wmsLayer);
         this.mapContent.addLayer(this.layer);
-        setMapCRS(this
+        this.mapCRS = this
             .mapContent
             .getViewport()
-            .getCoordinateReferenceSystem());
-        // createSwingContent(this.mapNode);
+            .getCoordinateReferenceSystem();
     }
 
     /**
@@ -638,7 +534,7 @@ public class WMSMapSwing {
         }
     }
 
-    private void setInitialExtend() {
+    public void setInitialExtend() {
         try {
             CoordinateReferenceSystem coordinateReferenceSystem =
                 CRS.decode(INITIAL_CRS);
@@ -663,7 +559,10 @@ public class WMSMapSwing {
      * @return the Bounds of the Map
      */
     public Envelope2D getBounds(CoordinateReferenceSystem crs) {
-        return this.bboxCoordinates.getBounds(crs);
+        if (this.bboxCoordinates != null) {
+            return this.bboxCoordinates.getBounds(crs);
+        }
+        return null;
     }
 
 
@@ -671,7 +570,9 @@ public class WMSMapSwing {
      * resets the map.
      */
     public void reset() {
-        this.bboxCoordinates.clearCoordinateDisplay();
+        if (this.bboxCoordinates != null) {
+            this.bboxCoordinates.clearCoordinateDisplay();
+        }
         removePolygonLayer();
         this.polygonFeatureCollection = null;
     }

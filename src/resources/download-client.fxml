@@ -10,6 +10,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import de.bayern.gdi.gui.NumberTextField?>
+<?import com.sothawo.mapjfx.MapView?>
 
 <VBox prefHeight="622.0" prefWidth="890.0" xmlns="http://javafx.com/javafx/8"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -243,6 +244,22 @@
                                                             <children>
                                                                 <VBox fx:id="mapNodeWFS" alignment="CENTER_LEFT" prefHeight="300.0" prefWidth="588.0" VBox.vgrow="ALWAYS">
                                                                     <children>
+                                                            <HBox spacing="10.0" >
+                                                                <fx:define>
+                                                                    <ToggleGroup fx:id="wmsMapActionGrp"/>
+                                                                </fx:define>
+                                                                <children>
+                                                                    <ToggleButton fx:id="wfsMapBboxButton" toggleGroup="$wmsMapActionGrp"/>
+                                                                    <ToggleButton fx:id="wfsMapInfoButton" toggleGroup="$wmsMapActionGrp"/>
+                                                                    <Button fx:id="wfsMapResizeButton"/>
+                                                                </children>
+                                                                <VBox.margin>
+                                                                    <Insets bottom="2.0"
+                                                                            top="2.0"/>
+                                                                </VBox.margin>
+                                                            </HBox>
+                                                            <MapView fx:id="wfsMapView" prefHeight="300.0" prefWidth="400.0" />
+                                                            <Label fx:id="wfsMapWmsSource" />
                                                                         <HBox fx:id="basicWFSFirstRows" >
                                                                             <children>
                                                                                 <VBox fx:id="basicWFSX1Y1"
@@ -483,7 +500,24 @@
                                                         <VBox fx:id="simpleWFSContainer"/>
                                                         <VBox fx:id="atomContainer">
                                                             <children>
-                                                                <VBox fx:id="mapNodeAtom" alignment="CENTER_LEFT" prefHeight="300.0" prefWidth="588.0" VBox.vgrow="ALWAYS" />
+                                                                <VBox fx:id="mapNodeAtom" alignment="CENTER_LEFT" prefHeight="300.0" prefWidth="588.0" VBox.vgrow="ALWAYS" >
+                                                                    <HBox spacing="10.0">
+                                                                        <fx:define>
+                                                                            <ToggleGroup fx:id="atomMapActionGrp"/>
+                                                                        </fx:define>
+                                                                        <children>
+                                                                            <ToggleButton fx:id="atomMapSelectButton" toggleGroup="$atomMapActionGrp"/>
+                                                                            <ToggleButton fx:id="atomMapInfoButton" toggleGroup="$atomMapActionGrp"/>
+                                                                            <Button fx:id="atomMapResizeButton"/>
+                                                                        </children>
+                                                                        <VBox.margin>
+                                                                            <Insets bottom="2.0"
+                                                                                    top="2.0"/>
+                                                                        </VBox.margin>
+                                                                    </HBox>
+                                                                    <MapView fx:id="atomMapView" prefHeight="300.0" prefWidth="400.0" />
+                                                                    <Label fx:id="atomMapWmsSource" />
+                                                                </VBox>
                                                                 <Separator
                                                                     VBox.vgrow="NEVER"/>
                                                                 <Label text="%gui.description"

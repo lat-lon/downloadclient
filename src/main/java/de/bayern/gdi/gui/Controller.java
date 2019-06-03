@@ -18,10 +18,12 @@
 
 package de.bayern.gdi.gui;
 
+import com.sothawo.mapjfx.MapView;
 import de.bayern.gdi.gui.map.FeaturePolygon;
 import de.bayern.gdi.gui.map.PolygonClickedEvent;
 import de.bayern.gdi.gui.map.PolygonInfos;
 import de.bayern.gdi.gui.map.WMSMapSwing;
+import de.bayern.gdi.gui.map.WmsHandlerBuilder;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -41,6 +43,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.text.Text;
 import org.locationtech.jts.geom.Geometry;
 import de.bayern.gdi.model.DownloadStep;
@@ -97,7 +100,6 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.input.KeyEvent;
@@ -176,7 +178,6 @@ public class Controller {
     private Stage primaryStage;
     private UIFactory factory;
     private boolean catalogReachable;
-    private WMSMapSwing mapAtom;
     private DownloadConfig downloadConfig;
 
     @FXML
@@ -325,8 +326,30 @@ public class Controller {
     private Tab tabFilter;
     @FXML
     private TabPane tabPane;
+    @FXML
+    private MapView wfsMapView;
+    @FXML
+    private Label wfsMapWmsSource;
+    @FXML
+    private ToggleButton wfsMapBboxButton;
+    @FXML
+    private ToggleButton wfsMapInfoButton;
+    @FXML
+    private Button wfsMapResizeButton;
+    @FXML
+    private MapView atomMapView;
+    @FXML
+    private Label atomMapWmsSource;
+    @FXML
+    private ToggleButton atomMapSelectButton;
+    @FXML
+    private ToggleButton atomMapInfoButton;
+    @FXML
+    private Button atomMapResizeButton;
 
-    private WMSMapSwing mapWFS;
+    private WMSMapSwing wmsWfsMapHandler;
+
+    private WMSMapSwing wmsAtomMapHandler;
 
     /**
      * Creates the Controller.
@@ -1177,12 +1200,12 @@ public class Controller {
                         getValue().getOldName()
                         : EPSG4326,
                 "");
-        if (mapWFS != null && referenceSystemChooser.getValue() != null) {
-            this.mapWFS.setDisplayCRS(
+        if (wmsWfsMapHandler != null && referenceSystemChooser.getValue() != null) {
+            this.wmsWfsMapHandler.setDisplayCRS(
                     referenceSystemChooser.getValue().getCRS());
-        } else if (mapWFS != null) {
+        } else if (wmsWfsMapHandler != null) {
             try {
-                this.mapWFS.setDisplayCRS(
+                this.wmsWfsMapHandler.setDisplayCRS(
                         this.dataBean.getAttributeValue("srsName"));
             } catch (FactoryException e) {
                 log.error(e.getMessage(), e);
@@ -1384,8 +1407,8 @@ public class Controller {
                 break;
             case WFS_ONE:
             case WFS_TWO:
-                if (mapWFS != null) {
-                    envelope = this.mapWFS.getBounds(
+                if (wmsWfsMapHandler != null) {
+                    envelope = this.wmsWfsMapHandler.getBounds(
                             referenceSystemChooser.
                                     getSelectionModel().
                                     getSelectedItem().
@@ -1641,11 +1664,11 @@ public class Controller {
         );
         this.serviceTypeChooser.setStyle(FX_BORDER_COLOR_NULL);
         this.dataBean.reset();
-        if (mapWFS != null) {
-            this.mapWFS.reset();
+        if (wmsWfsMapHandler != null) {
+            this.wmsWfsMapHandler.reset();
         }
-        if (mapAtom != null) {
-            this.mapAtom.reset();
+        if (wmsAtomMapHandler != null) {
+            this.wmsAtomMapHandler.reset();
         }
         this.simpleWFSContainer.setVisible(false);
         this.basicWFSContainer.setVisible(false);
@@ -1898,13 +1921,13 @@ public class Controller {
                                 ? i.getPolygon()
                                 : all.union(i.getPolygon());
                         }
-                        if (mapAtom != null) {
+                        if (wmsAtomMapHandler != null) {
                             if (all != null) {
                                 extendATOM = new ReferencedEnvelope(
                                         all.getEnvelopeInternal(), atomCRS);
-                                mapAtom.setExtend(extendATOM);
+                                wmsAtomMapHandler.setExtend(extendATOM);
                             }
-                            mapAtom.drawPolygons(polygonList);
+                            wmsAtomMapHandler.drawPolygons(polygonList);
                         }
                     } catch (FactoryException e) {
                         log.error(e.getMessage(), e);
@@ -1946,7 +1969,7 @@ public class Controller {
             types.add(new OverallFeatureTypeModel(features));
         }
         if (extendWFS != null) {
-            mapWFS.setExtend(extendWFS);
+            wmsWfsMapHandler.setExtend(extendWFS);
         }
         return types;
     }
@@ -1982,8 +2005,8 @@ public class Controller {
                 return;
             }
         }
-        if (mapAtom != null) {
-            mapAtom.highlightSelectedPolygon(item.getID());
+        if (wmsAtomMapHandler != null) {
+            wmsAtomMapHandler.highlightSelectedPolygon(item.getID());
         }
         List<Atom.Field> fields = item.getFields();
         ObservableList<ItemModel> list =
@@ -2128,7 +2151,7 @@ public class Controller {
     }
 
     private void setCrsAndExtent(WFSMeta.Feature feature) {
-        mapWFS.setExtend(feature.getBBox());
+        wmsWfsMapHandler.setExtend(feature.getBBox());
         ArrayList<String> list = new ArrayList<>();
         list.add(feature.getDefaultCRS());
         list.addAll(feature.getOtherCRSs());
@@ -2220,19 +2243,32 @@ public class Controller {
                 /*&& ServiceChecker.isReachable(
                 WMSMapSwing.getCapabiltiesURL(url))
                 */) {
-            mapWFS = new WMSMapSwing(serviceSetting, mapNodeWFS);
-            mapWFS.setCoordinateDisplay(
-                basicX1,
-                basicX2,
-                basicY1,
-                basicY2);
-            mapWFS.setCoordinateLabel(
-                lablbasicx1,
-                lablbasicx2,
-                lablbasicy1,
-                lablbasicy2);
-
-            mapAtom = new WMSMapSwing(serviceSetting, mapNodeAtom);
+            this.wmsWfsMapHandler = WmsHandlerBuilder.newBuilder(serviceSetting)
+                .with(mapNodeWFS)
+                .with(wfsMapView)
+                .with(wfsMapWmsSource)
+                .withBboxButton(wfsMapBboxButton)
+                .withInfoButton(wfsMapInfoButton)
+                .withResizeButtton(wfsMapResizeButton)
+                .withCoordinateDisplay(
+                    basicX1,
+                    basicX2,
+                    basicY1,
+                    basicY2)
+                .withCoordinateLabel(
+                    lablbasicx1,
+                    lablbasicx2,
+                    lablbasicy1,
+                    lablbasicy2)
+                .build();
+            this.wmsAtomMapHandler = WmsHandlerBuilder.newBuilder(serviceSetting)
+                .with(mapNodeAtom)
+                .with(atomMapView)
+                .with(atomMapWmsSource)
+                .withSelectButton(atomMapSelectButton)
+                .withInfoButton(atomMapInfoButton)
+                .withResizeButtton(atomMapResizeButton)
+                .build();
             mapNodeAtom.addEventHandler(PolygonClickedEvent.ANY,
                 new SelectedAtomPolygon());
         } else {
@@ -2405,7 +2441,7 @@ public class Controller {
             EventHandler<Event> {
         @Override
         public void handle(Event event) {
-            if (mapAtom != null && event instanceof PolygonClickedEvent) {
+            if (wmsAtomMapHandler != null && event instanceof PolygonClickedEvent) {
 
                 PolygonClickedEvent pce = (PolygonClickedEvent) event;
                 PolygonInfos polygonInfos =
