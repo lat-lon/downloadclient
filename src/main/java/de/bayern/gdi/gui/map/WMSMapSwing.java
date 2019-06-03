@@ -39,6 +39,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -96,11 +98,6 @@ public class WMSMapSwing extends Parent {
     private static final int MAP_WIDTH = 400;
     private static final int MAP_HEIGHT = 250;
     private static final double TEN_PERCENT = 0.1D;
-    private static final String TOOLBAR_INFO_BUTTON_NAME = "ToolbarInfoButton";
-    private static final String TOOLBAR_POINTER_BUTTON_NAME
-        = "ToolbarPointerButton";
-    private static final String TOOLBAR_RESET_BUTTON_NAME
-        = "ToolbarResetButton";
     private static final double BAY_MAX_LAT = 50.654523743525;
     private static final double BAY_MIN_LAT = 47.2178956772476;
     private static final double BAY_MIN_LON = 7.63593144329548;
@@ -454,12 +451,27 @@ public class WMSMapSwing extends Parent {
 
     private ToolBar createToolbar() {
         ToggleGroup bboxOrInfoGroup = new ToggleGroup();
-        this.bboxButton = new ToggleButton(TOOLBAR_POINTER_BUTTON_NAME);
+        this.bboxButton = new ToggleButton();
+        ImageView bboxIcon = new ImageView(
+            "/org/geotools/swing/icons/pointer.png");
+        Tooltip bboxTooltip = new Tooltip(I18n.format("tooltip.pointer"));
+        this.bboxButton.setGraphic(bboxIcon);
+        this.bboxButton.setTooltip(bboxTooltip);
         bboxButton.setToggleGroup(bboxOrInfoGroup);
-        this.infoButton = new ToggleButton(TOOLBAR_INFO_BUTTON_NAME);
+        this.infoButton = new ToggleButton();
+        ImageView infoIcon = new ImageView(
+            "/org/geotools/swing/icons/mActionIdentify.png");
+        Tooltip infoTooltip = new Tooltip(I18n.format("tooltip.info"));
+        infoButton.setGraphic(infoIcon);
+        infoButton.setTooltip(infoTooltip);
         infoButton.setToggleGroup(bboxOrInfoGroup);
 
-        Button resizeButton = new Button(TOOLBAR_RESET_BUTTON_NAME);
+        Button resizeButton = new Button();
+        ImageView resizeIcon = new ImageView(
+            "/org/geotools/swing/icons/mActionZoomFullExtent.png");
+        Tooltip resizeTooltip = new Tooltip(I18n.format("tooltip.resize"));
+        resizeButton.setGraphic(resizeIcon);
+        resizeButton.setTooltip(resizeTooltip);
         resizeButton.setOnAction(event -> setInitialExtend());
 
         ToolBar toolBar = new ToolBar(bboxButton, infoButton, resizeButton);
