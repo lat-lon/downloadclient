@@ -224,9 +224,9 @@ public class Controller {
     @FXML
     private VBox chainContainer;
     @FXML
-    private Group mapNodeWFS;
+    private VBox mapNodeWFS;
     @FXML
-    private Group mapNodeAtom;
+    private VBox mapNodeAtom;
     @FXML
     private TextField basicX1;
     @FXML
@@ -1651,10 +1651,7 @@ public class Controller {
         this.basicWFSContainer.setVisible(false);
         this.mapNodeWFS.setVisible(false);
         this.atomContainer.setVisible(false);
-        this.basicWFSX1Y1.setVisible(false);
-        this.basicWFSX2Y2.setVisible(false);
         this.sqlWFSArea.setVisible(false);
-        this.basicWFSFirstRows.setVisible(false);
         this.referenceSystemChooser.setVisible(false);
         this.referenceSystemChooserLabel.setVisible(false);
         resetProcessingChainContainer();
@@ -1918,9 +1915,6 @@ public class Controller {
                         serviceTypeChooser.setValue(opts.get(0));
                         chooseType(serviceTypeChooser.getValue());
                     }
-                    Platform.runLater(() ->
-                        mapAtom.repaint()
-                    );
                     break;
                 default:
             }
@@ -1990,9 +1984,6 @@ public class Controller {
         }
         if (mapAtom != null) {
             mapAtom.highlightSelectedPolygon(item.getID());
-            Platform.runLater(() ->
-                mapAtom.repaint()
-            );
         }
         List<Atom.Field> fields = item.getFields();
         ObservableList<ItemModel> list =
@@ -2049,21 +2040,11 @@ public class Controller {
             if (isSqlFilterType) {
                 this.sqlWFSArea.setVisible(true);
                 this.sqlWFSArea.setManaged(true);
-                this.basicWFSFirstRows.setVisible(false);
-                this.basicWFSX1Y1.setVisible(false);
-                this.basicWFSX1Y1.setManaged(false);
-                this.basicWFSX2Y2.setVisible(false);
-                this.basicWFSX2Y2.setManaged(false);
                 this.mapNodeWFS.setVisible(false);
                 this.mapNodeWFS.setManaged(false);
             } else {
                 this.sqlWFSArea.setVisible(false);
                 this.sqlWFSArea.setManaged(false);
-                this.basicWFSFirstRows.setVisible(true);
-                this.basicWFSX1Y1.setVisible(true);
-                this.basicWFSX1Y1.setManaged(true);
-                this.basicWFSX2Y2.setVisible(true);
-                this.basicWFSX2Y2.setManaged(true);
                 this.mapNodeWFS.setVisible(true);
                 this.mapNodeWFS.setManaged(true);
             }
@@ -2239,7 +2220,7 @@ public class Controller {
                 /*&& ServiceChecker.isReachable(
                 WMSMapSwing.getCapabiltiesURL(url))
                 */) {
-            mapWFS = new WMSMapSwing(serviceSetting);
+            mapWFS = new WMSMapSwing(serviceSetting, mapNodeWFS);
             mapWFS.setCoordinateDisplay(
                 basicX1,
                 basicX2,
@@ -2250,28 +2231,10 @@ public class Controller {
                 lablbasicx2,
                 lablbasicy1,
                 lablbasicy2);
-            this.mapNodeWFS.getChildren().add(mapWFS);
-            this.mapNodeWFS.setAutoSizeChildren(false);
-            mapWFS.repaint();
 
-            mapAtom = new WMSMapSwing(serviceSetting);
-            mapAtom.addEventHandler(PolygonClickedEvent.ANY,
-                    new SelectedAtomPolygon());
-            /* TODO: check if required for ATOM
-            mapAtom.setCoordinateDisplay(atomX1,
-                    atomY1,
-                    atomX2,
-                    atomY2);
-                    */
-            this.mapNodeAtom.getChildren().add(mapAtom);
-            this.mapNodeAtom.setAutoSizeChildren(false);
-
-            this.mapSplitPane.widthProperty().addListener(
-                    (obs, oldVal, newVal) -> {
-                mapWFS.resizeSwingContent(newVal.doubleValue());
-                mapAtom.resizeSwingContent(newVal.doubleValue());
-            });
-            mapAtom.repaint();
+            mapAtom = new WMSMapSwing(serviceSetting, mapNodeAtom);
+            mapNodeAtom.addEventHandler(PolygonClickedEvent.ANY,
+                new SelectedAtomPolygon());
         } else {
             setStatusTextUI(I18n.format("status.wms-not-available"));
         }
@@ -2279,7 +2242,6 @@ public class Controller {
         this.progressSearch.setVisible(false);
         this.simpleWFSContainer.setVisible(false);
         this.basicWFSContainer.setVisible(false);
-        this.basicWFSFirstRows.setVisible(false);
         this.serviceUser.setDisable(true);
         this.servicePW.setDisable(true);
         this.processStepContainter.setVisible(false);

@@ -32,7 +32,6 @@ import de.bayern.gdi.utils.I18n;
 import de.bayern.gdi.utils.ServiceSettings;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
-import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -81,11 +80,13 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import static com.sun.javafx.event.EventUtil.fireEvent;
+
 /**
  * @author Jochen Saalfeld (jochen@intevation.de)
  */
 
-public class WMSMapSwing extends Parent {
+public class WMSMapSwing {
 
     private static final Logger LOG
         = LoggerFactory.getLogger(WMSMapSwing.class.getName());
@@ -94,7 +95,6 @@ public class WMSMapSwing extends Parent {
      * name of the polygon layer.
      */
     public static final String POLYGON_LAYER_TITLE = "PolygonLayer";
-    private static final int SOURCE_LABEL_HEIGHT = 70;
     private static final int MAP_WIDTH = 400;
     private static final int MAP_HEIGHT = 250;
     private static final double TEN_PERCENT = 0.1D;
@@ -103,6 +103,7 @@ public class WMSMapSwing extends Parent {
     private static final double BAY_MIN_LON = 7.63593144329548;
     private static final double BAY_MAX_LON = 15.1069052509681;
     private static final String INITIAL_CRS = "EPSG:4326";
+    private final VBox mapNode;
 
     private WebMapServer wms;
     private MapView mapView;
@@ -127,6 +128,7 @@ public class WMSMapSwing extends Parent {
     private static void initGeotoolsLocale() {
         LocaleUtils.setLocale(I18n.getLocale());
     }
+
 
     /**
      * gets the getCapabilities URL.
@@ -155,40 +157,31 @@ public class WMSMapSwing extends Parent {
     return url;
     }
     */
-
-    /**
-     * Constructor.
-     *
-     * @param serviceSetting serviceSettings
-     */
-    public WMSMapSwing(ServiceSettings serviceSetting) {
+    public WMSMapSwing(ServiceSettings serviceSetting, VBox mapNode) {
+        this.mapNode = mapNode;
         initGeotoolsLocale();
-        init(serviceSetting);
+        init(serviceSetting, mapNode);
         initBboxCoordinates();
     }
 
-    private void init(ServiceSettings serviceSetting) {
+    private void init(ServiceSettings serviceSetting, VBox mapNodeWFS) {
         try {
             createMapView();
             initWmsAndLayer(serviceSetting);
             setMapCRS(CRS.decode(INITIAL_CRS));
 
             this.sb = new StyleBuilder();
-            VBox vBox = new VBox();
-            vBox.getChildren().add(createToolbar());
-            vBox.getChildren().add(this.mapView);
-            this.mapView.resize(MAP_WIDTH, MAP_HEIGHT);
-            vBox.resize(MAP_WIDTH, MAP_HEIGHT);
-            this.getChildren().add(vBox);
+            mapNodeWFS.getChildren().add(0, createToolbar());
+            mapNodeWFS.getChildren().add(1, this.mapView);
+            this.mapView.setMinWidth(MAP_WIDTH);
+            this.mapView.setMinHeight(MAP_HEIGHT);
 
             String wmsSource = serviceSetting.getWMSSource();
             if (wmsSource != null) {
                 Text sourceLabel = new Text(wmsSource);
-                //mapHeight += SOURCE_LABEL_HEIGHT;
-                vBox.getChildren().add(sourceLabel);
+                mapNodeWFS.getChildren().add(2, sourceLabel);
             }
 
-            //Projection.WGS_84, true);
             this.mapView.initialize();
         } catch (FactoryException e) {
             LOG.error(e.getMessage(), e);
@@ -423,7 +416,7 @@ public class WMSMapSwing extends Parent {
     private void setNameAndId(String name, String id) {
         PolygonInfos polyInf = new PolygonInfos(name, id);
         Platform.runLater(
-            () -> fireEvent(new PolygonClickedEvent(polyInf)));
+            () -> fireEvent(this.mapNode, new PolygonClickedEvent(polyInf)));
     }
 
     private String detectLayerName(org.geotools.map.Layer mapLayer) {
@@ -537,50 +530,6 @@ public class WMSMapSwing extends Parent {
      */
     public void highlightSelectedPolygon(String polygonID) {
         this.polygonsOnMapViewHandler.highlightSelectedPolygon(polygonID);
-    }
-
-    /**
-     * Resizes swing content and centers map.
-     *
-     * @param width The new content width.
-     */
-    public void resizeSwingContent(double width) {
-        /*
-        try {
-            if (width >= mapWidth) {
-                double oldWidth = mapPane.getWidth();
-
-                this.mapNode.resize(width - MAP_NODE_MARGIN, mapHeight);
-                double scale = mapPane.getWorldToScreenTransform().getScaleX();
-                ReferencedEnvelope bounds = mapPane.getDisplayArea();
-
-                double dXScreenCoord = (width - MAP_NODE_MARGIN - oldWidth) / 2;
-                double dXWorldCoord = dXScreenCoord / scale;
-
-                bounds.translate(-1 * dXWorldCoord , 0);
-                mapPane.setDisplayArea(bounds);
-                mapPane.deleteGraphics();
-                clearCoordinateDisplay();
-            }
-        } catch (NullPointerException e) { }
-        */
-    }
-
-    /**
-     * repaints the map.
-     */
-    public void repaint() {
-        /*
-        Task task = new Task() {
-            protected Integer call() {
-                mapPane.repaint();
-                return 0;
-            }
-        };
-        Thread th = new Thread(task);
-        th.setDaemon(true);
-        th.start();
-        */
     }
 
     /**
