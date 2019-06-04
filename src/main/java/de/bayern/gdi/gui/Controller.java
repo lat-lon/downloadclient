@@ -2042,7 +2042,6 @@ public class Controller {
                 + item.getDescription() + "</div>");
         this.simpleWFSContainer.setVisible(false);
         this.basicWFSContainer.setVisible(false);
-        this.basicWFSFirstRows.setVisible(false);
         this.atomContainer.setVisible(true);
     }
 
@@ -2147,7 +2146,6 @@ public class Controller {
             this.atomContainer.setVisible(false);
             this.simpleWFSContainer.setVisible(true);
             this.basicWFSContainer.setVisible(false);
-            this.basicWFSFirstRows.setVisible(false);
         }
     }
 
