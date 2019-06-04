@@ -27,15 +27,11 @@ import com.sothawo.mapjfx.MapView;
 import com.sothawo.mapjfx.WMSParam;
 import com.sothawo.mapjfx.event.MapViewEvent;
 import de.bayern.gdi.utils.Config;
-import de.bayern.gdi.utils.HTTP;
 import de.bayern.gdi.utils.I18n;
 import de.bayern.gdi.utils.ServiceSettings;
 import javafx.application.Platform;
 import javafx.event.EventTarget;
 import javafx.scene.control.Button;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.ows.CRSEnvelope;
@@ -179,6 +175,165 @@ public class MapHandler {
     }
 
 
+    /**
+     * return the Bounds of the Map.
+     *
+     * @return the Bounds of the Map
+    public Envelope2D getBounds() {
+    return getBounds(this.displayCRS);
+    }
+     */
+
+    /**
+     * Set display CRS.
+     *
+     * @param crs crs
+     */
+    public void setDisplayCRS(CoordinateReferenceSystem crs) {
+        if (bboxCoordinates != null) {
+            this.bboxCoordinates.setDisplayCRS(crs);
+        }
+    }
+
+    /**
+     * Set display CRS.
+     *
+     * @param crs crs
+     * @throws FactoryException when the CRS can't be found
+     */
+    public void setDisplayCRS(String crs) throws FactoryException {
+        if (bboxCoordinates != null) {
+            this.bboxCoordinates.setDisplayCRS(crs);
+        }
+    }
+
+    /**
+     * highlight the selected Polygon.
+     *
+     * @param polygonID the selected Polygon
+     */
+    public void highlightSelectedPolygon(String polygonID) {
+        this.polygonsOnMapViewHandler.highlightSelectedPolygon(polygonID);
+    }
+
+    /**
+     * Draws Polygons on the maps.
+     *
+     * @param featurePolygons List of drawable Polygons
+     */
+    public void drawPolygons(List<FeaturePolygon> featurePolygons) {
+        try {
+            String epsgCode = this
+                .mapCRS
+                .getIdentifiers()
+                .toArray()[0]
+                .toString();
+            epsgCode = epsgCode.substring(epsgCode.lastIndexOf(':') + 1,
+                epsgCode.length());
+            SimpleFeatureType polygonFeatureType = DataUtilities.createType(
+                "Dataset",
+                "geometry:Polygon:srid="
+                    + epsgCode
+                    + ","
+                    + "name:String,"
+                    + "id:String"
+            );
+            polygonFeatureCollection =
+                new DefaultFeatureCollection("internal",
+                    polygonFeatureType);
+
+            for (FeaturePolygon fp : featurePolygons) {
+                SimpleFeatureBuilder featureBuilder =
+                    new SimpleFeatureBuilder(polygonFeatureType);
+                try {
+                    MathTransform transform = CRS.findMathTransform(
+                        fp.getCrs(), this.mapCRS);
+                    featureBuilder.add(JTS.transform(fp.getPolygon(),
+                        transform));
+                    featureBuilder.add(fp.getName());
+                    featureBuilder.add(fp.getId());
+                    SimpleFeature feature = featureBuilder.buildFeature(null);
+                    polygonFeatureCollection.add(feature);
+                } catch (FactoryException | TransformException e) {
+                    LOG.error(e.getMessage(), e);
+                }
+            }
+            org.geotools.map.Layer polygonLayer = new FeatureLayer(
+                polygonFeatureCollection, sb.createStyle());
+            polygonLayer.setTitle(POLYGON_LAYER_TITLE);
+            removePolygonLayer();
+            mapContent.addLayer(polygonLayer);
+        } catch (SchemaException e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * sets the viewport of the map to the given extend.
+     *
+     * @param envelope the extend
+     */
+    public void setExtend(ReferencedEnvelope envelope) {
+        try {
+            envelope = envelope.transform(this.mapContent.getViewport()
+                .getCoordinateReferenceSystem(), true);
+            double xLength = envelope.getSpan(0);
+            xLength = xLength * TEN_PERCENT;
+            double yLength = envelope.getSpan(1);
+            yLength = yLength * TEN_PERCENT;
+            envelope.expandBy(xLength, yLength);
+
+            DirectPosition lowerCorner = envelope.getLowerCorner();
+            DirectPosition upperCorner = envelope.getUpperCorner();
+            Coordinate lower = new Coordinate(lowerCorner.getOrdinate(0),
+                lowerCorner.getOrdinate(1));
+            Coordinate upper = new Coordinate(upperCorner.getOrdinate(0),
+                upperCorner.getOrdinate(1));
+            mapView.setExtent(Extent.forCoordinates(lower, upper));
+
+            if (currentBbox != null) {
+                mapView.removeCoordinateLine(currentBbox);
+            }
+        } catch (FactoryException | TransformException e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Register action for resize.
+     *
+     * @param resizeButton the button to handle event, never <code>null</code>
+     */
+    public void registerResizeAction(Button resizeButton) {
+        resizeButton.setOnAction(event -> setInitialExtend());
+    }
+
+    /**
+     * return the Bounds of the Map.
+     *
+     * @param crs the CRS of the Bounding Box
+     * @return the Bounds of the Map
+     */
+    public Envelope2D getBounds(CoordinateReferenceSystem crs) {
+        if (this.bboxCoordinates != null) {
+            return this.bboxCoordinates.getBounds(crs);
+        }
+        return null;
+    }
+
+
+    /**
+     * resets the map.
+     */
+    public void reset() {
+        if (this.bboxCoordinates != null) {
+            this.bboxCoordinates.clearCoordinateDisplay();
+        }
+        removePolygonLayer();
+        this.polygonFeatureCollection = null;
+    }
+
+
     private void initWmsAndLayer(ServiceSettings serviceSetting) {
         try {
             String wmsLayerName = serviceSetting.getWMSLayer();
@@ -239,6 +394,17 @@ public class MapHandler {
                 handleInfoClickedEvent(event);
             }
         });
+    }
+
+    private void afterMapIsInitialized() {
+        LOG.debug("Initialize map");
+        ServiceSettings serviceSetting = Config.getInstance().getServices();
+        mapView.setWMSParam(new WMSParam()
+            .setUrl(serviceSetting.getWMSUrl())
+            .addParam("layers", serviceSetting.getWMSLayer()));
+        mapView.setMapType(MapType.WMS);
+        setInitialExtend();
+        LOG.debug("initialization of " + mapView.toString() + " finished");
     }
 
     private void handleBboxClickEvent(MapViewEvent event) {
@@ -383,191 +549,6 @@ public class MapHandler {
         return layerName;
     }
 
-    private void afterMapIsInitialized() {
-        LOG.debug("Initialize map");
-        ServiceSettings serviceSetting = Config.getInstance().getServices();
-        mapView.setWMSParam(new WMSParam()
-            .setUrl(serviceSetting.getWMSUrl())
-            .addParam("layers", serviceSetting.getWMSLayer()));
-        mapView.setMapType(MapType.WMS);
-        setInitialExtend();
-        LOG.debug("initialization of " + mapView.toString() + " finished");
-    }
-
-
-    /**
-     * return the Bounds of the Map.
-     *
-     * @return the Bounds of the Map
-    public Envelope2D getBounds() {
-    return getBounds(this.displayCRS);
-    }
-     */
-
-    /**
-     * Set display CRS.
-     *
-     * @param crs crs
-     */
-    public void setDisplayCRS(CoordinateReferenceSystem crs) {
-        if (bboxCoordinates != null) {
-            this.bboxCoordinates.setDisplayCRS(crs);
-        }
-    }
-
-    /**
-     * Set display CRS.
-     *
-     * @param crs crs
-     * @throws FactoryException when the CRS can't be found
-     */
-    public void setDisplayCRS(String crs) throws FactoryException {
-        if (bboxCoordinates != null) {
-            this.bboxCoordinates.setDisplayCRS(crs);
-        }
-    }
-
-    private void displayMap(Layer wmsLayer) {
-        CRSEnvelope targetEnv = null;
-        for (CRSEnvelope env : wmsLayer.getLayerBoundingBoxes()) {
-            if (env.getEPSGCode().equals(INITIAL_CRS)) {
-                targetEnv = env;
-            }
-        }
-        wmsLayer.setBoundingBoxes(targetEnv);
-
-        this.layer = new WMSLayer(this.wms, wmsLayer);
-        this.mapContent.addLayer(this.layer);
-        this.mapCRS = this
-            .mapContent
-            .getViewport()
-            .getCoordinateReferenceSystem();
-    }
-
-    /**
-     * highlight the selected Polygon.
-     *
-     * @param polygonID the selected Polygon
-     */
-    public void highlightSelectedPolygon(String polygonID) {
-        this.polygonsOnMapViewHandler.highlightSelectedPolygon(polygonID);
-    }
-
-    /**
-     * Checks status code of a getMap request, using a head request.
-     * Workaround to get geotools getMap request status codes.
-     *
-     * @param requestURL getMap URL
-     * @return Status string containing status code, reason phrase and method
-     */
-    private String checkGetMap(String requestURL) {
-        try (
-            CloseableHttpClient client =
-                HTTP.getClient(new URL(requestURL), null, null);
-        ) {
-            HttpHead head = new HttpHead(requestURL);
-            CloseableHttpResponse resp = client.execute(head);
-            return resp.getStatusLine().getStatusCode() + " "
-                + resp.getStatusLine().getReasonPhrase() + " "
-                + "GET";
-        } catch (IOException e) {
-            LOG.error(e.getMessage(), e);
-        }
-        return "";
-    }
-
-    /**
-     * Draws Polygons on the maps.
-     *
-     * @param featurePolygons List of drawable Polygons
-     */
-    public void drawPolygons(List<FeaturePolygon> featurePolygons) {
-        try {
-            String epsgCode = this
-                .mapCRS
-                .getIdentifiers()
-                .toArray()[0]
-                .toString();
-            epsgCode = epsgCode.substring(epsgCode.lastIndexOf(':') + 1,
-                epsgCode.length());
-            SimpleFeatureType polygonFeatureType = DataUtilities.createType(
-                "Dataset",
-                "geometry:Polygon:srid="
-                    + epsgCode
-                    + ","
-                    + "name:String,"
-                    + "id:String"
-            );
-            polygonFeatureCollection =
-                new DefaultFeatureCollection("internal",
-                    polygonFeatureType);
-
-            for (FeaturePolygon fp : featurePolygons) {
-                SimpleFeatureBuilder featureBuilder =
-                    new SimpleFeatureBuilder(polygonFeatureType);
-                try {
-                    MathTransform transform = CRS.findMathTransform(
-                        fp.getCrs(), this.mapCRS);
-                    featureBuilder.add(JTS.transform(fp.getPolygon(),
-                        transform));
-                    featureBuilder.add(fp.getName());
-                    featureBuilder.add(fp.getId());
-                    SimpleFeature feature = featureBuilder.buildFeature(null);
-                    polygonFeatureCollection.add(feature);
-                } catch (FactoryException | TransformException e) {
-                    LOG.error(e.getMessage(), e);
-                }
-            }
-            org.geotools.map.Layer polygonLayer = new FeatureLayer(
-                polygonFeatureCollection, sb.createStyle());
-            polygonLayer.setTitle(POLYGON_LAYER_TITLE);
-            removePolygonLayer();
-            mapContent.addLayer(polygonLayer);
-        } catch (SchemaException e) {
-            LOG.error(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * sets the viewport of the map to the given extend.
-     *
-     * @param envelope the extend
-     */
-    public void setExtend(ReferencedEnvelope envelope) {
-        try {
-            envelope = envelope.transform(this.mapContent.getViewport()
-                .getCoordinateReferenceSystem(), true);
-            double xLength = envelope.getSpan(0);
-            xLength = xLength * TEN_PERCENT;
-            double yLength = envelope.getSpan(1);
-            yLength = yLength * TEN_PERCENT;
-            envelope.expandBy(xLength, yLength);
-
-            DirectPosition lowerCorner = envelope.getLowerCorner();
-            DirectPosition upperCorner = envelope.getUpperCorner();
-            Coordinate lower = new Coordinate(lowerCorner.getOrdinate(0),
-                lowerCorner.getOrdinate(1));
-            Coordinate upper = new Coordinate(upperCorner.getOrdinate(0),
-                upperCorner.getOrdinate(1));
-            mapView.setExtent(Extent.forCoordinates(lower, upper));
-
-            if (currentBbox != null) {
-                mapView.removeCoordinateLine(currentBbox);
-            }
-        } catch (FactoryException | TransformException e) {
-            LOG.error(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Register action for resize.
-     *
-     * @param resizeButton the button to handle event, never <code>null</code>
-     */
-    public void registerResizeAction(Button resizeButton) {
-        resizeButton.setOnAction(event -> setInitialExtend());
-    }
-
     private void setInitialExtend() {
         try {
             CoordinateReferenceSystem coordinateReferenceSystem =
@@ -586,29 +567,21 @@ public class MapHandler {
 
     }
 
-    /**
-     * return the Bounds of the Map.
-     *
-     * @param crs the CRS of the Bounding Box
-     * @return the Bounds of the Map
-     */
-    public Envelope2D getBounds(CoordinateReferenceSystem crs) {
-        if (this.bboxCoordinates != null) {
-            return this.bboxCoordinates.getBounds(crs);
+    private void displayMap(Layer wmsLayer) {
+        CRSEnvelope targetEnv = null;
+        for (CRSEnvelope env : wmsLayer.getLayerBoundingBoxes()) {
+            if (env.getEPSGCode().equals(INITIAL_CRS)) {
+                targetEnv = env;
+            }
         }
-        return null;
-    }
+        wmsLayer.setBoundingBoxes(targetEnv);
 
-
-    /**
-     * resets the map.
-     */
-    public void reset() {
-        if (this.bboxCoordinates != null) {
-            this.bboxCoordinates.clearCoordinateDisplay();
-        }
-        removePolygonLayer();
-        this.polygonFeatureCollection = null;
+        this.layer = new WMSLayer(this.wms, wmsLayer);
+        this.mapContent.addLayer(this.layer);
+        this.mapCRS = this
+            .mapContent
+            .getViewport()
+            .getCoordinateReferenceSystem();
     }
 
     private void removePolygonLayer() {
