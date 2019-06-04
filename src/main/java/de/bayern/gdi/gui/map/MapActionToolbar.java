@@ -56,7 +56,7 @@ public class MapActionToolbar {
     public void setBboxButton(ToggleButton bboxBt) {
         this.bboxButton = bboxBt;
         ImageView bboxIcon = new ImageView(
-            "/org/geotools/swing/icons/remove_layer.png");
+            "/img/drawbbox.png");
         Tooltip bboxTooltip = new Tooltip(I18n.format("tooltip.bbox"));
         this.bboxButton.setGraphic(bboxIcon);
         this.bboxButton.setTooltip(bboxTooltip);
