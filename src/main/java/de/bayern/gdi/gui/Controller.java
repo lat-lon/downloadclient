@@ -22,8 +22,8 @@ import com.sothawo.mapjfx.MapView;
 import de.bayern.gdi.gui.map.FeaturePolygon;
 import de.bayern.gdi.gui.map.PolygonClickedEvent;
 import de.bayern.gdi.gui.map.PolygonInfos;
-import de.bayern.gdi.gui.map.WMSMapSwing;
-import de.bayern.gdi.gui.map.WmsHandlerBuilder;
+import de.bayern.gdi.gui.map.MapHandler;
+import de.bayern.gdi.gui.map.MapHandlerBuilder;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -347,9 +347,9 @@ public class Controller {
     @FXML
     private Button atomMapResizeButton;
 
-    private WMSMapSwing wmsWfsMapHandler;
+    private MapHandler wmsWfsMapHandler;
 
-    private WMSMapSwing wmsAtomMapHandler;
+    private MapHandler wmsAtomMapHandler;
 
     /**
      * Creates the Controller.
@@ -1200,7 +1200,8 @@ public class Controller {
                         getValue().getOldName()
                         : EPSG4326,
                 "");
-        if (wmsWfsMapHandler != null && referenceSystemChooser.getValue() != null) {
+        if (wmsWfsMapHandler != null
+            && referenceSystemChooser.getValue() != null) {
             this.wmsWfsMapHandler.setDisplayCRS(
                     referenceSystemChooser.getValue().getCRS());
         } else if (wmsWfsMapHandler != null) {
@@ -2243,10 +2244,11 @@ public class Controller {
                 /*&& ServiceChecker.isReachable(
                 WMSMapSwing.getCapabiltiesURL(url))
                 */) {
-            this.wmsWfsMapHandler = WmsHandlerBuilder.newBuilder(serviceSetting)
-                .with(mapNodeWFS)
-                .with(wfsMapView)
-                .with(wfsMapWmsSource)
+            this.wmsWfsMapHandler = MapHandlerBuilder
+                .newBuilder(serviceSetting)
+                .withEventTarget(mapNodeWFS)
+                .withMapView(wfsMapView)
+                .withWmsSourceLabel(wfsMapWmsSource)
                 .withBboxButton(wfsMapBboxButton)
                 .withInfoButton(wfsMapInfoButton)
                 .withResizeButtton(wfsMapResizeButton)
@@ -2261,10 +2263,11 @@ public class Controller {
                     lablbasicy1,
                     lablbasicy2)
                 .build();
-            this.wmsAtomMapHandler = WmsHandlerBuilder.newBuilder(serviceSetting)
-                .with(mapNodeAtom)
-                .with(atomMapView)
-                .with(atomMapWmsSource)
+            this.wmsAtomMapHandler = MapHandlerBuilder
+                .newBuilder(serviceSetting)
+                .withEventTarget(mapNodeAtom)
+                .withMapView(atomMapView)
+                .withWmsSourceLabel(atomMapWmsSource)
                 .withSelectButton(atomMapSelectButton)
                 .withInfoButton(atomMapInfoButton)
                 .withResizeButtton(atomMapResizeButton)
@@ -2441,7 +2444,8 @@ public class Controller {
             EventHandler<Event> {
         @Override
         public void handle(Event event) {
-            if (wmsAtomMapHandler != null && event instanceof PolygonClickedEvent) {
+            if (wmsAtomMapHandler != null
+                && event instanceof PolygonClickedEvent) {
 
                 PolygonClickedEvent pce = (PolygonClickedEvent) event;
                 PolygonInfos polygonInfos =

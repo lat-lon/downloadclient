@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static de.bayern.gdi.gui.map.WMSMapSwing.POLYGON_LAYER_TITLE;
+import static de.bayern.gdi.gui.map.MapHandler.POLYGON_LAYER_TITLE;
 
 /**
  * @author <a href="mailto:goltz@lat-lon.de">Lyn Goltz </a>

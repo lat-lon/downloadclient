@@ -1,3 +1,20 @@
+/*
+ * DownloadClient Geodateninfrastruktur Bayern
+ *
+ * (c) 2016 GSt. GDI-BY (gdi.bayern.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.bayern.gdi.gui.map;
 
 import de.bayern.gdi.utils.I18n;
@@ -19,9 +36,12 @@ public class MapActionToolbar {
 
     private Button resizeButton;
 
-
-    public void setSelectButtton(ToggleButton selectButton) {
-        this.selectButton = selectButton;
+    /**
+     * @param selectBt button used to select features,
+     *                     never <code>null</code>
+     */
+    public void setSelectButtton(ToggleButton selectBt) {
+        this.selectButton = selectBt;
         ImageView selectIcon = new ImageView(
             "/org/geotools/swing/icons/pointer.png");
         Tooltip selectTooltip = new Tooltip(I18n.format("tooltip.select"));
@@ -29,8 +49,12 @@ public class MapActionToolbar {
         this.selectButton.setTooltip(selectTooltip);
     }
 
-    public void setBboxButton(ToggleButton bboxButton) {
-        this.bboxButton = bboxButton;
+    /**
+     * @param bboxBt button used to draw a rectangle on the map,
+     *                   never <code>null</code>
+     */
+    public void setBboxButton(ToggleButton bboxBt) {
+        this.bboxButton = bboxBt;
         ImageView bboxIcon = new ImageView(
             "/org/geotools/swing/icons/remove_layer.png");
         Tooltip bboxTooltip = new Tooltip(I18n.format("tooltip.bbox"));
@@ -38,8 +62,12 @@ public class MapActionToolbar {
         this.bboxButton.setTooltip(bboxTooltip);
     }
 
-    public void setInfoButton(ToggleButton infoButton) {
-        this.infoButton = infoButton;
+    /**
+     * @param infoBt button used to get feature info,
+     *                   never <code>null</code>
+     */
+    public void setInfoButton(ToggleButton infoBt) {
+        this.infoButton = infoBt;
         ImageView infoIcon = new ImageView(
             "/org/geotools/swing/icons/mActionIdentify.png");
         Tooltip infoTooltip = new Tooltip(I18n.format("tooltip.info"));
@@ -47,8 +75,12 @@ public class MapActionToolbar {
         this.infoButton.setTooltip(infoTooltip);
     }
 
-    public void setResizeButtton(Button resizeButton) {
-        this.resizeButton = resizeButton;
+    /**
+     * @param resizeBt button used to resize the map,
+     *                     never <code>null</code>
+     */
+    public void setResizeButtton(Button resizeBt) {
+        this.resizeButton = resizeBt;
         ImageView resizeIcon = new ImageView(
             "/org/geotools/swing/icons/mActionZoomFullExtent.png");
         Tooltip resizeTooltip = new Tooltip(I18n.format("tooltip.resize"));
@@ -56,10 +88,19 @@ public class MapActionToolbar {
         this.resizeButton.setTooltip(resizeTooltip);
     }
 
-    public void registerResizeHandler(WMSMapSwing wmsMapSwing) {
-        this.resizeButton.setOnAction(event -> wmsMapSwing.setInitialExtend());
+    /**
+     * @param mapHandler to register resize button, never <code>null</code>
+     */
+    public void registerResizeHandler(MapHandler mapHandler) {
+        mapHandler.registerResizeAction(this.resizeButton);
     }
 
+    /**
+     * Check if select button is selected.
+     *
+     * @return <code>true</code> if select button is selected,
+     * <code>false</code> otherwise.
+     */
     public boolean isSelectButtonSelected() {
         if (selectButton != null) {
             return selectButton.isSelected();
@@ -67,6 +108,12 @@ public class MapActionToolbar {
         return false;
     }
 
+    /**
+     * Check if bbox button is selected.
+     *
+     * @return <code>true</code> if bbox button is selected,
+     * <code>false</code> otherwise.
+     */
     public boolean isBboxButtonSelected() {
         if (bboxButton != null) {
             return bboxButton.isSelected();
@@ -74,6 +121,12 @@ public class MapActionToolbar {
         return false;
     }
 
+    /**
+     * Check if info button is selected.
+     *
+     * @return <code>true</code> if info button is selected,
+     * <code>false</code> otherwise.
+     */
     public boolean isInfoButtonSelected() {
         if (infoButton != null) {
             return infoButton.isSelected();

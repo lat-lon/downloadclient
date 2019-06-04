@@ -32,6 +32,7 @@ import de.bayern.gdi.utils.I18n;
 import de.bayern.gdi.utils.ServiceSettings;
 import javafx.application.Platform;
 import javafx.event.EventTarget;
+import javafx.scene.control.Button;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -76,10 +77,10 @@ import static com.sun.javafx.event.EventUtil.fireEvent;
  * @author Jochen Saalfeld (jochen@intevation.de)
  */
 
-public class WMSMapSwing {
+public class MapHandler {
 
     private static final Logger LOG
-        = LoggerFactory.getLogger(WMSMapSwing.class.getName());
+        = LoggerFactory.getLogger(MapHandler.class.getName());
 
     /**
      * name of the polygon layer.
@@ -91,7 +92,7 @@ public class WMSMapSwing {
     private static final double BAY_MIN_LON = 7.63593144329548;
     private static final double BAY_MAX_LON = 15.1069052509681;
     private static final String INITIAL_CRS = "EPSG:4326";
-    private final EventTarget mapNode;
+    private final EventTarget eventTarget;
     private final MapView mapView;
 
     private WebMapServer wms;
@@ -105,7 +106,8 @@ public class WMSMapSwing {
     private BboxCoordinates bboxCoordinates;
     private final MapActionToolbar toolbar;
     private PolygonsOnMapViewHandler polygonsOnMapViewHandler;
-    private final FeatureInfoReporter featureInfoReporter = new FeatureInfoReporter();
+    private final FeatureInfoReporter featureInfoReporter =
+        new FeatureInfoReporter();
 
 
     /**
@@ -137,8 +139,25 @@ public class WMSMapSwing {
     return url;
     }
     */
-    public WMSMapSwing(ServiceSettings serviceSetting, EventTarget mapNode, MapView mapView, BboxCoordinates bboxCoordinates, MapActionToolbar toolbar) {
-        this.mapNode = mapNode;
+
+    /**
+     * Constructor.
+     *
+     * @param serviceSetting  serviceSettings, never <code>null</code>
+     * @param eventTarget     target of the {@link PolygonClickedEvent},
+     *                        never <code>null</code>
+     * @param mapView         encapsulated {@link MapView},
+     *                        never <code>null</code>
+     * @param bboxCoordinates encapsulated {@link BboxCoordinates},
+     *                        may be <code>null</code>
+     * @param toolbar         with map actions, never <code>null</code>
+     */
+    MapHandler(ServiceSettings serviceSetting,
+               EventTarget eventTarget,
+               MapView mapView,
+               BboxCoordinates bboxCoordinates,
+               MapActionToolbar toolbar) {
+        this.eventTarget = eventTarget;
         this.mapView = mapView;
         this.bboxCoordinates = bboxCoordinates;
         this.toolbar = toolbar;
@@ -343,7 +362,8 @@ public class WMSMapSwing {
     private void setNameAndId(String name, String id) {
         PolygonInfos polyInf = new PolygonInfos(name, id);
         Platform.runLater(
-            () -> fireEvent(this.mapNode, new PolygonClickedEvent(polyInf)));
+            () -> fireEvent(this.eventTarget,
+                new PolygonClickedEvent(polyInf)));
     }
 
     private String detectLayerName(org.geotools.map.Layer mapLayer) {
@@ -534,7 +554,16 @@ public class WMSMapSwing {
         }
     }
 
-    public void setInitialExtend() {
+    /**
+     * Register action for resize.
+     *
+     * @param resizeButton the button to handle event, never <code>null</code>
+     */
+    public void registerResizeAction(Button resizeButton) {
+        resizeButton.setOnAction(event -> setInitialExtend());
+    }
+
+    private void setInitialExtend() {
         try {
             CoordinateReferenceSystem coordinateReferenceSystem =
                 CRS.decode(INITIAL_CRS);
