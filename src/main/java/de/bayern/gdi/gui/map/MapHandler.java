@@ -39,6 +39,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.ows.CRSEnvelope;
+import org.geotools.data.ows.HTTPClient;
 import org.geotools.data.ows.Layer;
 import org.geotools.data.wms.WebMapServer;
 import org.geotools.feature.DefaultFeatureCollection;
@@ -51,6 +52,7 @@ import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.MapContent;
 import org.geotools.map.WMSLayer;
+import org.geotools.ows.ServiceException;
 import org.geotools.referencing.CRS;
 import org.geotools.styling.StyleBuilder;
 import org.geotools.swing.locale.LocaleUtils;
@@ -118,27 +120,30 @@ public class MapHandler {
         LocaleUtils.setLocale(I18n.getLocale());
     }
 
-    /*
+    /**
+     * gets the getCapabilities URL.
+     *
+     * @param mapURL the URL of the Map
+     * @return getCapabilties URL
+     */
     public static URL getCapabiltiesURL(URL mapURL) {
-    URL url = mapURL;
-    try {
-    WebMapServer wms = new WebMapServer(mapURL);
-    HTTPClient httpClient = wms.getHTTPClient();
-    URL get = wms.
-    getCapabilities().
-    getRequest().
-    getGetCapabilities().
-    getGet();
-    if (get != null) {
-    url = new URL(get.toString() + "request=GetCapabilities");
+        try {
+            WebMapServer wms = new WebMapServer(mapURL);
+            HTTPClient httpClient = wms.getHTTPClient();
+            URL get = wms.
+                getCapabilities().
+                getRequest().
+                getGetCapabilities().
+                getGet();
+            if (get != null) {
+                return new URL(get.toString() + "request=GetCapabilities");
+            }
+            httpClient.getConnectTimeout();
+        } catch (IOException | ServiceException e) {
+            LOG.error(e.getMessage(), e);
+        }
+        return mapURL;
     }
-    httpClient.getConnectTimeout();
-    } catch (IOException | ServiceException e) {
-    LOG.error(e.getMessage(), e);
-    }
-    return url;
-    }
-    */
 
     /**
      * Constructor.

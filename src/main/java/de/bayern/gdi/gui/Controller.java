@@ -2060,6 +2060,11 @@ public class Controller {
                 isSqlFilterType = FILTER.equals(filterType);
             }
 
+            this.simpleWFSContainer.setVisible(false);
+            this.atomContainer.setVisible(false);
+            this.referenceSystemChooser.setVisible(true);
+            this.referenceSystemChooserLabel.setVisible(true);
+            this.basicWFSContainer.setVisible(true);
             if (isSqlFilterType) {
                 this.sqlWFSArea.setVisible(true);
                 this.sqlWFSArea.setManaged(true);
@@ -2071,11 +2076,6 @@ public class Controller {
                 this.mapNodeWFS.setVisible(true);
                 this.mapNodeWFS.setManaged(true);
             }
-            this.simpleWFSContainer.setVisible(false);
-            this.atomContainer.setVisible(false);
-            this.referenceSystemChooser.setVisible(true);
-            this.referenceSystemChooserLabel.setVisible(true);
-            this.basicWFSContainer.setVisible(true);
 
             if (data.getItem() instanceof WFSMeta.Feature) {
                 setCrsAndExtent((WFSMeta.Feature) data.getItem());
@@ -2143,9 +2143,6 @@ public class Controller {
                 });
             }
 
-            this.atomContainer.setVisible(false);
-            this.simpleWFSContainer.setVisible(true);
-            this.basicWFSContainer.setVisible(false);
         }
     }
 
@@ -2237,11 +2234,8 @@ public class Controller {
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
         }
-        if (url != null
-            //TODO
-                /*&& ServiceChecker.isReachable(
-                WMSMapSwing.getCapabiltiesURL(url))
-                */) {
+        if (url != null && ServiceChecker
+            .isReachable(wmsWfsMapHandler.getCapabiltiesURL(url))) {
             this.wmsWfsMapHandler = MapHandlerBuilder
                 .newBuilder(serviceSetting)
                 .withEventTarget(mapNodeWFS)
