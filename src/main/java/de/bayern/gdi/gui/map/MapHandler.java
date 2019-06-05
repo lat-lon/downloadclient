@@ -449,14 +449,16 @@ public class MapHandler {
         Coordinate clickedCoord = event.getCoordinate();
         DirectPosition2D pos = new DirectPosition2D(
             clickedCoord.getLatitude(), clickedCoord.getLongitude());
+        LOG.debug("Handle click event on position: " + pos.toString());
+        LOG.debug("Visible layers: " + mapContent.layers());
         for (org.geotools.map.Layer mapLayer : mapContent.layers()) {
             if (mapLayer.isSelected()) {
                 String layerName = detectLayerName(mapLayer);
                 InfoToolHelper helper =
                     InfoToolHelperLookup.getHelper(mapLayer);
                 if (helper == null) {
-                    LOG.warn("InfoTool cannot query {0}",
-                        mapLayer.getClass().getName());
+                    LOG.warn("InfoTool cannot query "
+                        + mapLayer.getClass().getName());
                     return;
                 }
 
@@ -472,6 +474,8 @@ public class MapHandler {
         Coordinate clickedCoord = event.getCoordinate();
         DirectPosition2D pos = new DirectPosition2D(
             clickedCoord.getLatitude(), clickedCoord.getLongitude());
+        LOG.debug("Show Featue InfoTool on selected position: " + pos.toString());
+        LOG.debug("Available layers: " + mapContent.layers());
         featureInfoReporter.createReporter();
         featureInfoReporter.report(pos);
 
@@ -481,8 +485,8 @@ public class MapHandler {
                 InfoToolHelper helper =
                     InfoToolHelperLookup.getHelper(mapLayer);
                 if (helper == null) {
-                    LOG.warn("InfoTool cannot query {0}",
-                        mapLayer.getClass().getName());
+                    LOG.warn("InfoTool cannot query "
+                        + mapLayer.getClass().getName());
                     return;
                 }
 
@@ -493,7 +497,7 @@ public class MapHandler {
                     InfoToolResult result = helper.getInfo(pos);
                     featureInfoReporter.report(layerName, result);
                 } catch (Exception var11) {
-                    LOG.warn("Unable to query layer {}", layerName);
+                    LOG.warn("Unable to query layer " + layerName);
                 }
             }
         }
@@ -503,6 +507,8 @@ public class MapHandler {
     private void highlightClickedPolygon(DirectPosition2D pos,
                                          String layerName,
                                          InfoToolHelper helper) {
+        LOG.debug("Highlight polygon on selected position: " + pos.toString());
+        LOG.debug("Search for polygon in layer: " + layerName);
         try {
             if (layerName.equals(POLYGON_LAYER_TITLE)) {
                 InfoToolResult result =
@@ -519,11 +525,14 @@ public class MapHandler {
                     String id = (String)
                         featureData.get("id");
                     setNameAndId(name, id);
+                    LOG.debug("Polygon found in layer "
+                        + layerName + " with ID " + id);
                 } else if (numFeatures > 1) {
-                    //Yup, this is dirty.
+                    //TODO Yup, this is dirty.
                     setNameAndId("#@#", Integer
                         .toString(numFeatures));
                 }
+
             }
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
