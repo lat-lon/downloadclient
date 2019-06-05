@@ -474,7 +474,7 @@ public class MapHandler {
         Coordinate clickedCoord = event.getCoordinate();
         DirectPosition2D pos = new DirectPosition2D(
             clickedCoord.getLatitude(), clickedCoord.getLongitude());
-        LOG.debug("Show Featue InfoTool on selected position: " + pos.toString());
+        LOG.debug("Show InfoTool on selected position: " + pos.toString());
         LOG.debug("Available layers: " + mapContent.layers());
         featureInfoReporter.createReporter();
         featureInfoReporter.report(pos);
