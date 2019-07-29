@@ -60,6 +60,13 @@ public class DownloadStepConverter {
     private static final Logger LOG
         = LoggerFactory.getLogger(DownloadStepConverter.class.getName());
 
+    private static final String OUTPUTFORMAT_PARAM = "outputformat";
+
+    private static final String APPLICATION_X_SHAPEFILE
+        = "application/x-shapefile";
+
+    private static final String APPLICATION_X_GMZ = "application/x-gmz";
+
     /**
      * Type of a Query.
      */
@@ -154,6 +161,11 @@ public class DownloadStepConverter {
             createAtomDownload(jl, path);
         } else {
             createWFSDownload(jl, path, psc.getUsedVars());
+        }
+
+        if (psc.hasJobs() && isZippedOutputformat(downloadSteps)) {
+            UnzipJob unzipJob = new UnzipJob(fileTracker, this.logger);
+            jl.addJob(unzipJob);
         }
 
         jl.addJobs(psc.getJobs());
@@ -596,4 +608,11 @@ public class DownloadStepConverter {
                 + e.getLocalizedMessage());
         }
     }
+
+    private boolean isZippedOutputformat(DownloadStep downloadStep) {
+        String outputformat = downloadStep.findParameter(OUTPUTFORMAT_PARAM);
+        return APPLICATION_X_SHAPEFILE.equals(outputformat)
+            || APPLICATION_X_GMZ.equals(outputformat);
+    }
+
 }
