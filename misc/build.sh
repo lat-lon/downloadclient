@@ -13,33 +13,6 @@ echo 'Building Downloadclient Release ' $VERSION
 echo ''
 echo ''
 
-rm -rf build
-
-echo ''
-echo 'Creating Build directories'
-mkdir build
-mkdir build/config
-
-
-echo ''
-echo 'Copying config from resources to config folder'
-cp src/resources/settings.xml build/config
-cp src/resources/de/bayern/gdi/model/mimetypes.xml build/config
-cp src/resources/de/bayern/gdi/model/verarbeitungsschritte.xml build/config
-cp src/resources/de/bayern/gdi/model/proxy.xml.sample build/config
-cp src/resources/log4j2.yaml build/config
-
-echo ''
-echo 'Populating Textfiles'
-cp misc/textfiles/* build/
-sed -i s/{VERSION}/$VERSION/g build/LIESMICH_Linux.txt
-sed -i s/{VERSION}/$VERSION/g build/LIESMICH_Windows.txt
-
-
-echo ''
-echo 'Copying Starter-Scripts'
-cp misc/scripts/* build/
-
 echo ''
 echo 'Altering the about_*.html to contain the Version ' $VERSION
 sed -i s/{project.version}/$VERSION/g src/resources/about/about_*.html
@@ -63,7 +36,19 @@ fi
 #tidy up the version-number alteration above
 git checkout -- src/resources/about
 
-cp target/downloadclient-*.jar build/downloadclient.jar
+rm -rf build
+
+echo ''
+echo 'Creating Build directories'
+mkdir build
+
+cp -r target/downloadclient-*-build/* build
+
+echo ''
+echo 'Populating Textfiles'
+sed -i s/{VERSION}/$VERSION/g build/LIESMICH_Linux.txt
+sed -i s/{VERSION}/$VERSION/g build/LIESMICH_Windows.txt
+
 chmod u+x build/downloadclient.jar
 
 
