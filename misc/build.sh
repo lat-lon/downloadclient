@@ -6,7 +6,7 @@ set -e
 #Assuming we're still in the "misc" dir
 cd ..
 
-VERSION=$(xmlstarlet sel -N pom="http://maven.apache.org/POM/4.0.0" -t -v '/pom:project/pom:version' pom.xml)
+VERSION=1.2.3
 
 echo ''
 echo 'Building Downloadclient Release ' $VERSION
